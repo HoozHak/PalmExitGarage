@@ -20,7 +20,6 @@ function ExistingCustomer() {
   const [showWorkOrderForm, setShowWorkOrderForm] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState(null);
   const [showFullWorkOrderDetail, setShowFullWorkOrderDetail] = useState(false);
-  const [showWorkOrderDetail, setShowWorkOrderDetail] = useState(false);
   const [selectedWorkOrderId, setSelectedWorkOrderId] = useState(null);
 
   useEffect(() => {
@@ -151,11 +150,11 @@ function ExistingCustomer() {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'estimate': return '#FFD329';
-      case 'approved': return '#4CAF50';
-      case 'in_progress': return '#FF9800';
-      case 'completed': return '#2196F3';
-      case 'cancelled': return '#f44336';
+      case 'Estimate': return '#FFD329';
+      case 'Approved': return '#4CAF50';
+      case 'Started': return '#FF9800';
+      case 'Complete': return '#2196F3';
+      case 'Cancelled': return '#f44336';
       default: return '#ccc';
     }
   };
@@ -180,12 +179,7 @@ function ExistingCustomer() {
 
   const handleViewWorkOrder = (workOrderId) => {
     setSelectedWorkOrderId(workOrderId);
-    setShowWorkOrderDetail(true);
-  };
-
-  const handleCloseWorkOrderDetail = () => {
-    setShowWorkOrderDetail(false);
-    setSelectedWorkOrderId(null);
+    setShowFullWorkOrderDetail(true);
   };
 
   const handleWorkOrderDeleted = (workOrderId) => {
@@ -195,15 +189,28 @@ function ExistingCustomer() {
     }
   };
 
-  const handleViewFullWorkOrder = (workOrderId) => {
-    setSelectedWorkOrderId(workOrderId);
-    setShowWorkOrderDetail(false);
-    setShowFullWorkOrderDetail(true);
-  };
-
   const handleCloseFullWorkOrderDetail = () => {
     setShowFullWorkOrderDetail(false);
     setSelectedWorkOrderId(null);
+    // Refresh customer history to show updated work order status
+    if (selectedCustomer) {
+      loadCustomerHistory(selectedCustomer.customer_id);
+    }
+  };
+
+  const handleStatusChanged = (workOrderId, newStatus) => {
+    // Update the work order status in the local state immediately
+    if (customerHistory) {
+      const updatedWorkOrders = customerHistory.workOrders.map(wo => 
+        wo.work_order_id === workOrderId 
+          ? { ...wo, status: newStatus }
+          : wo
+      );
+      setCustomerHistory({
+        ...customerHistory,
+        workOrders: updatedWorkOrders
+      });
+    }
   };
 
   return (
@@ -762,7 +769,7 @@ function ExistingCustomer() {
                         <div>
                           <div style={{
                             backgroundColor: getStatusColor(order.status),
-                            color: order.status === 'estimate' ? 'black' : 'white',
+                            color: order.status === 'Estimate' ? 'black' : 'white',
                             padding: '4px 8px',
                             borderRadius: '12px',
                             fontSize: '12px',
@@ -771,7 +778,7 @@ function ExistingCustomer() {
                             textTransform: 'uppercase',
                             width: 'fit-content'
                           }}>
-                            {order.status.replace('_', ' ')}
+                            {order.status}
                           </div>
                         </div>
                         <div style={{ color: '#ccc' }}>
@@ -807,125 +814,6 @@ function ExistingCustomer() {
           </div>
         )}
         
-        {/* Work Order Detail Modal */}
-        {showWorkOrderDetail && selectedWorkOrderId && (
-          <div style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-            padding: '20px'
-          }}>
-            <div style={{
-              backgroundColor: '#333',
-              borderRadius: '10px',
-              padding: '30px',
-              maxWidth: '600px',
-              width: '100%',
-              maxHeight: '80vh',
-              overflowY: 'auto',
-              color: '#FFD329'
-            }}>
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: '20px'
-              }}>
-                <h2 style={{ margin: 0, color: '#FFD329' }}>
-                  Work Order #{selectedWorkOrderId}
-                </h2>
-                <button
-                  onClick={handleCloseWorkOrderDetail}
-                  style={{
-                    backgroundColor: '#666',
-                    color: '#FFD329',
-                    border: 'none',
-                    borderRadius: '5px',
-                    padding: '8px 16px',
-                    cursor: 'pointer',
-                    fontSize: '16px'
-                  }}
-                >
-                  ✗ Close
-                </button>
-              </div>
-              
-              <div style={{
-                backgroundColor: '#444',
-                padding: '20px',
-                borderRadius: '8px',
-                marginBottom: '20px'
-              }}>
-                <p style={{ color: '#FFD329', fontSize: '16px', margin: 0 }}>
-                  🔧 Work Order Details will be loaded here
-                </p>
-                <p style={{ color: '#ccc', fontSize: '14px', marginTop: '10px', marginBottom: 0 }}>
-                  This is a temporary placeholder. The full work order details, 
-                  including parts, labor, and status management will be implemented next.
-                </p>
-              </div>
-              
-              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-                <button
-                  style={{
-                    backgroundColor: '#FFD329',
-                    color: 'black',
-                    border: 'none',
-                    borderRadius: '5px',
-                    padding: '10px 20px',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    fontWeight: 'bold'
-                  }}
-                  onClick={() => handleViewFullWorkOrder(selectedWorkOrderId)}
-                >
-                  📋 View Full Work Order
-                </button>
-                <button
-                  style={{
-                    backgroundColor: '#4CAF50',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '5px',
-                    padding: '10px 20px',
-                    cursor: 'pointer',
-                    fontSize: '14px'
-                  }}
-                  onClick={() => {
-                    alert('Status change functionality will be implemented next');
-                  }}
-                >
-                  🔄 Change Status
-                </button>
-                <button
-                  style={{
-                    backgroundColor: '#f44336',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '5px',
-                    padding: '10px 20px',
-                    cursor: 'pointer',
-                    fontSize: '14px'
-                  }}
-                  onClick={() => {
-                    if (confirm(`Are you sure you want to delete Work Order #${selectedWorkOrderId}?`)) {
-                      alert('Delete functionality will be implemented next');
-                    }
-                  }}
-                >
-                  🗑️ Delete
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
         
         {/* Full Work Order Detail Modal */}
         {showFullWorkOrderDetail && selectedWorkOrderId && (
@@ -952,6 +840,7 @@ function ExistingCustomer() {
                 workOrderId={selectedWorkOrderId}
                 onClose={handleCloseFullWorkOrderDetail}
                 onDeleted={handleWorkOrderDeleted}
+                onStatusChanged={handleStatusChanged}
               />
             </div>
           </div>

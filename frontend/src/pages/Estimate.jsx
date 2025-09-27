@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import logo from '../assets/PalmExitLogo.png'
 import Navigation from '../components/Navigation.jsx'
 
@@ -10,6 +10,7 @@ const BTN = {
 }
 
 export default function Estimate(){
+  const navigate = useNavigate()
   const [customers, setCustomers] = useState([])
   const [vehicles, setVehicles] = useState([])
   const [parts, setParts] = useState([])
@@ -21,6 +22,7 @@ export default function Estimate(){
   const [laborRows, setLaborRows] = useState([]) // {labor_id, qty}
   const [taxRate, setTaxRate] = useState(0.0825) // 8.25% default; adjust for your city
   const [notes, setNotes] = useState('')
+  const [saving, setSaving] = useState(false)
 
   // load catalogs
   useEffect(() => {
@@ -67,6 +69,97 @@ export default function Estimate(){
 
   const money = c => `$${(c/100).toFixed(2)}`
 
+  const clearForm = () => {
+    setCustomerId('')
+    setVehicleId('')
+    setPartRows([])
+    setLaborRows([])
+    setTaxRate(0.0825)
+    setNotes('')
+  }
+
+  const saveEstimate = async () => {
+    if (!customerId && customerId !== 'estimate-only') {
+      alert('Please select a customer or use "Estimate Only" option')
+      return
+    }
+    if (!vehicleId && customerId !== 'estimate-only') {
+      alert('Please select a vehicle')
+      return
+    }
+    if (partRows.length === 0 && laborRows.length === 0) {
+      alert('Please add at least one part or labor item')
+      return
+    }
+
+    setSaving(true)
+    try {
+      // Prepare parts data with cost lookup
+      const partsData = partRows.map(row => {
+        const part = parts.find(p => String(p.part_id) === String(row.part_id))
+        return {
+          part_id: row.part_id,
+          quantity: Number(row.qty),
+          cost_cents: part ? part.cost_cents : 0
+        }
+      }).filter(p => p.part_id && p.quantity > 0)
+
+      // Prepare labor data with cost lookup
+      const laborData = laborRows.map(row => {
+        const laborItem = labor.find(l => String(l.labor_id) === String(row.labor_id))
+        return {
+          labor_id: row.labor_id,
+          quantity: Number(row.qty),
+          cost_cents: laborItem ? laborItem.labor_cost_cents : 0
+        }
+      }).filter(l => l.labor_id && l.quantity > 0)
+
+      const payload = {
+        customer_id: customerId === 'estimate-only' ? null : customerId,
+        vehicle_id: customerId === 'estimate-only' ? null : vehicleId,
+        parts: partsData,
+        labor: laborData,
+        tax_rate: Number(taxRate),
+        notes: notes,
+        is_estimate: true
+      }
+
+      const response = await fetch(`${API}/work-orders`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to save estimate')
+      }
+
+      const result = await response.json()
+      alert(`Estimate saved successfully! Work Order ID: ${result.work_order_id}`)
+      
+      // Optionally clear the form after saving
+      const shouldClear = confirm('Estimate saved! Would you like to clear the form for a new estimate?')
+      if (shouldClear) {
+        clearForm()
+      }
+    } catch (error) {
+      console.error('Error saving estimate:', error)
+      alert('Error saving estimate: ' + error.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleCustomerChange = (value) => {
+    if (value === 'new-customer') {
+      window.open('/customer/new', '_blank', 'noopener,noreferrer')
+      return
+    }
+    setCustomerId(value)
+    setVehicleId('')
+  }
+
   return (
     <div style={{ background:'black', minHeight:'100vh', color:YELLOW }}>
       <Navigation />
@@ -81,8 +174,11 @@ export default function Estimate(){
         <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:16}}>
           <div>
             <label style={{display:'block', marginBottom:'8px', fontWeight:'bold'}}>Customer</label>
-            <select value={customerId} onChange={e=>{setCustomerId(e.target.value); setVehicleId('')}} style={{width:'100%', background:'#111', color:YELLOW, padding:10, borderRadius:8, border:'1px solid #333'}}>
+            <select value={customerId} onChange={e=>handleCustomerChange(e.target.value)} style={{width:'100%', background:'#111', color:YELLOW, padding:10, borderRadius:8, border:'1px solid #333'}}>
               <option value="">Select customer…</option>
+              <option value="estimate-only" style={{fontStyle:'italic'}}>📋 Estimate Only</option>
+              <option value="new-customer" style={{fontStyle:'italic'}}>➕ Add New Customer</option>
+              <option disabled style={{color:'#666'}}>─────────────────</option>
               {customers.map(c => (
                 <option key={c.customer_id} value={c.customer_id}>{c.first_name} {c.last_name}</option>
               ))}
@@ -90,9 +186,12 @@ export default function Estimate(){
           </div>
           <div>
             <label style={{display:'block', marginBottom:'8px', fontWeight:'bold'}}>Vehicle</label>
-            <select value={vehicleId} onChange={e=>setVehicleId(e.target.value)} disabled={!customerId} style={{width:'100%', background:'#111', color:YELLOW, padding:10, borderRadius:8, border:'1px solid #333'}}>
-              <option value="">{customerId ? 'Select vehicle…' : 'Choose customer first'}</option>
-              {customerVehicles.map(v => (
+            <select value={vehicleId} onChange={e=>setVehicleId(e.target.value)} disabled={!customerId || customerId === 'estimate-only'} style={{width:'100%', background:'#111', color:YELLOW, padding:10, borderRadius:8, border:'1px solid #333'}}>
+              <option value="">
+                {customerId === 'estimate-only' ? 'No vehicle (estimate only)' : 
+                 customerId ? 'Select vehicle…' : 'Choose customer first'}
+              </option>
+              {customerId !== 'estimate-only' && customerVehicles.map(v => (
                 <option key={v.vehicle_id} value={v.vehicle_id}>{`${v.year} ${v.make} ${v.model}`}</option>
               ))}
             </select>
@@ -152,16 +251,16 @@ export default function Estimate(){
 
       {/* Notes & Totals */}
       <section style={{border:'1px solid #444', borderRadius:12, padding:16, marginBottom:16}}>
-        <div style={{display:'grid', gridTemplateColumns:'2fr 1fr', gap:16}}>
+        <div style={{display:'grid', gridTemplateColumns:'1fr 300px', gap:24}}>
           <div>
             <label style={{display:'block', marginBottom:'8px', fontWeight:'bold'}}>Notes</label>
-            <textarea value={notes} onChange={e=>setNotes(e.target.value)} rows={5} style={{width:'100%', background:'#111', color:YELLOW, padding:10, borderRadius:8, border:'1px solid #333', resize:'vertical'}} />
+            <textarea value={notes} onChange={e=>setNotes(e.target.value)} rows={8} style={{width:'100%', background:'#111', color:YELLOW, padding:10, borderRadius:8, border:'1px solid #333', resize:'vertical'}} />
           </div>
-          <div>
+          <div style={{minWidth:'300px'}}>
             <label style={{display:'block', marginBottom:'8px', fontWeight:'bold'}}>Tax Rate</label>
             <input type="number" step="0.0001" value={taxRate} onChange={e=>setTaxRate(e.target.value)} style={{width:'100%', background:'#111', color:YELLOW, padding:10, borderRadius:8, border:'1px solid #333'}}/>
 
-            <div style={{marginTop:16, borderTop:'1px solid #333', paddingTop:12}}>
+            <div style={{marginTop:16, borderTop:'1px solid #333', paddingTop:12, background:'#111', padding:'12px', borderRadius:8}}>
               <div style={{display:'flex', justifyContent:'space-between', marginBottom:8}}><span>Parts:</span><strong>{money(sumPartsCents)}</strong></div>
               <div style={{display:'flex', justifyContent:'space-between', marginBottom:8}}><span>Labor:</span><strong>{money(sumLaborCents)}</strong></div>
               <div style={{display:'flex', justifyContent:'space-between', marginBottom:8}}><span>Subtotal:</span><strong>{money(subtotalCents)}</strong></div>
@@ -173,9 +272,24 @@ export default function Estimate(){
       </section>
 
       {/* Actions */}
-      <div style={{display:'flex', gap:12}}>
+      <div style={{display:'flex', gap:12, flexWrap:'wrap'}}>
         <button style={BTN} onClick={()=>window.print()}>🖨️ Print</button>
-        <button style={BTN} onClick={()=>alert('Save functionality coming soon: will add work_orders tables to backend to persist.')}>💾 Save (coming soon)</button>
+        <button 
+          style={{...BTN, backgroundColor: saving ? '#666' : '#2a7c2a'}} 
+          onClick={saveEstimate}
+          disabled={saving}
+        >
+          {saving ? '⏳ Saving...' : '💾 Save Estimate'}
+        </button>
+        <button 
+          style={{...BTN, backgroundColor:'#c54545'}} 
+          onClick={() => {
+            const confirmed = confirm('Are you sure you want to clear the entire form?')
+            if (confirmed) clearForm()
+          }}
+        >
+          🗑️ Clear Form
+        </button>
       </div>
       </div>
     </div>

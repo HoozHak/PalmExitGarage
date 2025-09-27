@@ -14,6 +14,9 @@ function WorkOrderManagement() {
   const [selectedWorkOrder, setSelectedWorkOrder] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showCompletionEmailPrompt, setShowCompletionEmailPrompt] = useState(false);
+  const [pendingStatusChange, setPendingStatusChange] = useState(null);
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
 
   useEffect(() => {
     loadWorkOrders();
@@ -65,6 +68,23 @@ function WorkOrderManagement() {
   };
 
   const handleStatusUpdate = async (workOrderId, newStatus) => {
+    // Special handling for Complete status - show email choice dialog
+    if (newStatus === 'Complete') {
+      const workOrder = workOrders.find(wo => wo.work_order_id === workOrderId);
+      
+      // Check if work order has customer email - if so, show email choice
+      if (workOrder && workOrder.customer_name) {
+        setPendingStatusChange({ workOrderId, newStatus, workOrder });
+        setShowCompletionEmailPrompt(true);
+        return;
+      }
+    }
+    
+    // For other statuses, update normally
+    await updateWorkOrderStatusOnly(workOrderId, newStatus);
+  };
+  
+  const updateWorkOrderStatusOnly = async (workOrderId, newStatus) => {
     try {
       const response = await fetch(`${API_BASE}/work-orders/${workOrderId}/status`, {
         method: 'PUT',
@@ -81,15 +101,81 @@ function WorkOrderManagement() {
             ? { ...wo, status: newStatus }
             : wo
         ));
+        
         alert(`Work order status updated to: ${newStatus}`);
+        return true;
       } else {
         const error = await response.json();
-        alert('Error updating status: ' + error.message);
+        alert('Error updating status: ' + (error.error || error.message));
+        return false;
       }
     } catch (error) {
       console.error('Error updating status:', error);
       alert('Network error: Could not update status');
+      return false;
     }
+  };
+  
+  const handleSendCompletionEmail = async () => {
+    if (!pendingStatusChange) return;
+    
+    setIsSendingEmail(true);
+    setShowCompletionEmailPrompt(false);
+    
+    try {
+      // First update the status
+      const statusUpdated = await updateWorkOrderStatusOnly(pendingStatusChange.workOrderId, pendingStatusChange.newStatus);
+      
+      if (statusUpdated) {
+        // Then send completion email
+        const response = await fetch(`${API_BASE}/email/send-completion/${pendingStatusChange.workOrderId}`, {
+          method: 'POST'
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          alert(
+            `✅ Work Order #${pendingStatusChange.workOrderId} marked as Complete!\n\n` +
+            `📧 Pickup notification email sent successfully!\n\n` +
+            `The customer has been notified that their vehicle is ready for pickup.`
+          );
+        } else {
+          const error = await response.json();
+          alert(
+            `✅ Work Order #${pendingStatusChange.workOrderId} marked as Complete!\n\n` +
+            `⚠️ Email failed to send: ${error.error}\n\n` +
+            `You may want to contact the customer directly about pickup.`
+          );
+        }
+      }
+    } catch (error) {
+      console.error('Error sending completion email:', error);
+      alert(
+        `✅ Work Order #${pendingStatusChange.workOrderId} marked as Complete!\n\n` +
+        `⚠️ Network error sending email.\n\n` +
+        `You may want to contact the customer directly about pickup.`
+      );
+    } finally {
+      setIsSendingEmail(false);
+      setPendingStatusChange(null);
+    }
+  };
+  
+  const handleSkipCompletionEmail = async () => {
+    if (!pendingStatusChange) return;
+    
+    setShowCompletionEmailPrompt(false);
+    // Just update status without sending email
+    const statusUpdated = await updateWorkOrderStatusOnly(pendingStatusChange.workOrderId, pendingStatusChange.newStatus);
+    
+    if (statusUpdated) {
+      alert(
+        `✅ Work Order #${pendingStatusChange.workOrderId} marked as Complete!\n\n` +
+        `💬 No email sent - you may want to contact the customer directly about pickup.`
+      );
+    }
+    
+    setPendingStatusChange(null);
   };
 
   const handleDeleteWorkOrder = async (workOrderId) => {
@@ -461,6 +547,111 @@ function WorkOrderManagement() {
         </div>
       </div>
 
+      {/* Completion Email Prompt Modal */}
+      {showCompletionEmailPrompt && pendingStatusChange && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          zIndex: 1001,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '20px'
+        }}>
+          <div style={{
+            backgroundColor: '#222',
+            borderRadius: '10px',
+            padding: '30px',
+            maxWidth: '500px',
+            width: '100%',
+            border: '2px solid #FFD329'
+          }}>
+            <h3 style={{
+              color: '#FFD329',
+              marginTop: 0,
+              marginBottom: '20px',
+              textAlign: 'center'
+            }}>
+              Work Order Complete
+            </h3>
+            
+            <div style={{
+              color: '#fff',
+              marginBottom: '25px',
+              textAlign: 'center',
+              lineHeight: '1.5'
+            }}>
+              <p style={{ margin: '0 0 10px 0' }}>
+                Work Order <strong>#{pendingStatusChange.workOrderId}</strong> for <strong>{pendingStatusChange.workOrder?.customer_name}</strong> is ready to be marked as Complete.
+              </p>
+              <p style={{ margin: '10px 0 0 0', color: '#ccc' }}>
+                Would you like to send a pickup notification email to the customer?
+              </p>
+            </div>
+            
+            <div style={{
+              display: 'flex',
+              gap: '15px',
+              justifyContent: 'center'
+            }}>
+              <button
+                onClick={handleSendCompletionEmail}
+                disabled={isSendingEmail}
+                style={{
+                  backgroundColor: '#4CAF50',
+                  color: 'white',
+                  padding: '12px 24px',
+                  fontSize: '16px',
+                  fontWeight: 'bold',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: isSendingEmail ? 'wait' : 'pointer',
+                  opacity: isSendingEmail ? 0.7 : 1,
+                  minWidth: '140px'
+                }}
+              >
+                {isSendingEmail ? '📧 Sending...' : '📧 Send Email'}
+              </button>
+              
+              <button
+                onClick={handleSkipCompletionEmail}
+                disabled={isSendingEmail}
+                style={{
+                  backgroundColor: '#666',
+                  color: 'white',
+                  padding: '12px 24px',
+                  fontSize: '16px',
+                  fontWeight: 'bold',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: isSendingEmail ? 'wait' : 'pointer',
+                  opacity: isSendingEmail ? 0.7 : 1,
+                  minWidth: '140px'
+                }}
+              >
+                Skip Email
+              </button>
+            </div>
+            
+            <div style={{
+              marginTop: '20px',
+              padding: '12px',
+              backgroundColor: '#333',
+              borderRadius: '6px',
+              fontSize: '12px',
+              color: '#ccc',
+              textAlign: 'center'
+            }}>
+              💡 Tip: The email will notify the customer that their vehicle is ready for pickup and include shop contact information.
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Work Order Detail Modal */}
       {selectedWorkOrder && (
         <div style={{
@@ -489,6 +680,14 @@ function WorkOrderManagement() {
               workOrderId={selectedWorkOrder}
               onClose={() => setSelectedWorkOrder(null)}
               onDeleted={handleWorkOrderDeleted}
+              onStatusChanged={(workOrderId, newStatus) => {
+                // Update the work order status in the list immediately
+                setWorkOrders(workOrders.map(wo => 
+                  wo.work_order_id === workOrderId 
+                    ? { ...wo, status: newStatus }
+                    : wo
+                ));
+              }}
             />
           </div>
         </div>

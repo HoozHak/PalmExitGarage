@@ -12,10 +12,27 @@ class EmailService {
     try {
       const savedConfig = await configStore.loadEmailConfig();
       if (savedConfig && savedConfig.email) {
-        // We have saved config, but need password from user
         this.shopEmail = savedConfig.email;
         this.shopName = savedConfig.shopName || 'Palm Exit Garage';
         this.hasSavedConfig = true;
+        
+        // Try to load saved password
+        const savedPassword = await configStore.getDecryptedPassword();
+        if (savedPassword) {
+          // Automatically configure with saved credentials
+          const fullConfig = {
+            email: savedConfig.email,
+            password: savedPassword,
+            shopName: savedConfig.shopName
+          };
+          
+          const success = await this.configure(fullConfig, true); // Skip saving during auto-load
+          if (success) {
+            console.log(`✅ Email service auto-configured successfully for: ${savedConfig.email}`);
+            return savedConfig;
+          }
+        }
+        
         console.log(`Found saved email config for: ${savedConfig.email}`);
         console.log('Email service partially configured - password required for activation');
         return savedConfig;
@@ -28,7 +45,7 @@ class EmailService {
   }
 
   // Configure Gmail SMTP
-  async configure(emailConfig) {
+  async configure(emailConfig, skipSaving = false) {
     try {
       this.transporter = nodemailer.createTransport({
         service: 'gmail',
@@ -43,13 +60,16 @@ class EmailService {
       this.shopName = emailConfig.shopName || 'Palm Exit Garage';
       this.hasSavedConfig = true;
       
-      // Save configuration to persistent storage (without password)
-      await configStore.saveEmailConfig({
-        email: emailConfig.email,
-        shopName: emailConfig.shopName
-      });
+      // Save configuration to persistent storage (including encrypted password)
+      if (!skipSaving) {
+        await configStore.saveEmailConfig({
+          email: emailConfig.email,
+          password: emailConfig.password,
+          shopName: emailConfig.shopName
+        });
+        console.log('Email service configured and saved successfully');
+      }
       
-      console.log('Email service configured and saved successfully');
       return true;
     } catch (error) {
       console.error('Failed to configure email service:', error);

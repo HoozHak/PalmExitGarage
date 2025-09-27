@@ -7,7 +7,7 @@ const configStore = require('./utils/configStore');
 require('dotenv').config();
 
 const app = express();
-const port = process.env.PORT || 5000;
+let port = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors());
@@ -838,130 +838,11 @@ app.put('/api/work-orders/:id/status', async (req, res) => {
             return;
         }
         
-        // If status is changed to 'Complete', send completion email automatically
-        if (status === 'Complete' && emailService.isConfigured) {
-            try {
-                // Get work order data for email
-                const workOrderQuery = `
-                    SELECT wo.*, 
-                           c.first_name, c.last_name, c.phone, c.email, c.address, c.city, c.state, c.zip_code,
-                           v.year, v.make, v.model, v.vin, v.license_plate, v.mileage
-                    FROM work_orders wo
-                    JOIN customers c ON wo.customer_id = c.customer_id
-                    JOIN vehicles v ON wo.vehicle_id = v.vehicle_id
-                    WHERE wo.work_order_id = ?
-                `;
-                
-                const partsQuery = `
-                    SELECT wop.*, p.brand, p.item, p.part_number, p.description
-                    FROM work_order_parts wop
-                    JOIN parts p ON wop.part_id = p.part_id
-                    WHERE wop.work_order_id = ?
-                `;
-                
-                const laborQuery = `
-                    SELECT wol.*, l.labor_name, l.description, l.estimated_time_hours
-                    FROM work_order_labor wol
-                    JOIN labor l ON wol.labor_id = l.labor_id
-                    WHERE wol.work_order_id = ?
-                `;
-                
-                const workOrderResult = await new Promise((resolve, reject) => {
-                    db.query(workOrderQuery, [workOrderId], (err, results) => {
-                        if (err) reject(err);
-                        else resolve(results);
-                    });
-                });
-                
-                if (workOrderResult.length > 0) {
-                    const partsResult = await new Promise((resolve, reject) => {
-                        db.query(partsQuery, [workOrderId], (err, results) => {
-                            if (err) reject(err);
-                            else resolve(results);
-                        });
-                    });
-                    
-                    const laborResult = await new Promise((resolve, reject) => {
-                        db.query(laborQuery, [workOrderId], (err, results) => {
-                            if (err) reject(err);
-                            else resolve(results);
-                        });
-                    });
-                    
-                    const workOrder = workOrderResult[0];
-                    
-                    // Only send if customer has email
-                    if (workOrder.email) {
-                        const workOrderData = {
-                            workOrder: workOrder,
-                            customer: {
-                                first_name: workOrder.first_name,
-                                last_name: workOrder.last_name,
-                                phone: workOrder.phone,
-                                email: workOrder.email,
-                                address: workOrder.address,
-                                city: workOrder.city,
-                                state: workOrder.state,
-                                zip_code: workOrder.zip_code
-                            },
-                            vehicle: {
-                                year: workOrder.year,
-                                make: workOrder.make,
-                                model: workOrder.model,
-                                vin: workOrder.vin,
-                                license_plate: workOrder.license_plate,
-                                mileage: workOrder.mileage
-                            },
-                            parts: partsResult,
-                            labor: laborResult
-                        };
-                        
-                        // Send completion email
-                        const emailResult = await emailService.sendWorkOrderCompletion(workOrderData);
-                        console.log(`Completion email sent for Work Order #${workOrderId}:`, emailResult);
-                        
-                        res.json({ 
-                            message: `Work order status updated to ${status}. Completion email sent to ${workOrder.email}`,
-                            work_order_id: workOrderId,
-                            status: status,
-                            email_sent: true,
-                            email_recipient: workOrder.email
-                        });
-                    } else {
-                        console.log(`Work Order #${workOrderId} completed but no customer email found`);
-                        res.json({ 
-                            message: `Work order status updated to ${status}`,
-                            work_order_id: workOrderId,
-                            status: status,
-                            email_sent: false,
-                            email_note: 'Customer email not found'
-                        });
-                    }
-                } else {
-                    res.json({ 
-                        message: `Work order status updated to ${status}`,
-                        work_order_id: workOrderId,
-                        status: status
-                    });
-                }
-            } catch (emailError) {
-                console.error('Error sending completion email:', emailError);
-                // Still return success for status update, but note email issue
-                res.json({ 
-                    message: `Work order status updated to ${status}. Email notification failed to send.`,
-                    work_order_id: workOrderId,
-                    status: status,
-                    email_sent: false,
-                    email_error: emailError.message
-                });
-            }
-        } else {
-            res.json({ 
-                message: `Work order status updated to ${status}`,
-                work_order_id: workOrderId,
-                status: status
-            });
-        }
+        res.json({ 
+            message: `Work order status updated to ${status}`,
+            work_order_id: workOrderId,
+            status: status
+        });
     });
 });
 
@@ -1272,9 +1153,115 @@ app.post('/api/email/send-receipt/:workOrderId', async (req, res) => {
     }
 });
 
+// Send work order completion email
+app.post('/api/email/send-completion/:workOrderId', async (req, res) => {
+    const workOrderId = req.params.workOrderId;
+    
+    try {
+        // Get work order data with all details
+        const workOrderQuery = `
+            SELECT wo.*, 
+                   CONCAT(c.first_name, ' ', c.last_name) as customer_name,
+                   c.first_name, c.last_name, c.phone, c.email, c.address, c.city, c.state, c.zip_code,
+                   v.year, v.make, v.model, v.vin, v.license_plate, v.mileage
+            FROM work_orders wo
+            JOIN customers c ON wo.customer_id = c.customer_id
+            JOIN vehicles v ON wo.vehicle_id = v.vehicle_id
+            WHERE wo.work_order_id = ?
+        `;
+        
+        const partsQuery = `
+            SELECT wop.*, p.brand, p.item, p.part_number, p.description
+            FROM work_order_parts wop
+            JOIN parts p ON wop.part_id = p.part_id
+            WHERE wop.work_order_id = ?
+        `;
+        
+        const laborQuery = `
+            SELECT wol.*, l.labor_name, l.description, l.estimated_time_hours
+            FROM work_order_labor wol
+            JOIN labor l ON wol.labor_id = l.labor_id
+            WHERE wol.work_order_id = ?
+        `;
+        
+        // Execute all queries
+        const workOrderResult = await new Promise((resolve, reject) => {
+            db.query(workOrderQuery, [workOrderId], (err, results) => {
+                if (err) reject(err);
+                else resolve(results);
+            });
+        });
+        
+        if (workOrderResult.length === 0) {
+            return res.status(404).json({ error: 'Work order not found' });
+        }
+        
+        const partsResult = await new Promise((resolve, reject) => {
+            db.query(partsQuery, [workOrderId], (err, results) => {
+                if (err) reject(err);
+                else resolve(results);
+            });
+        });
+        
+        const laborResult = await new Promise((resolve, reject) => {
+            db.query(laborQuery, [workOrderId], (err, results) => {
+                if (err) reject(err);
+                else resolve(results);
+            });
+        });
+        
+        const workOrder = workOrderResult[0];
+        
+        // Check if customer has email
+        if (!workOrder.email) {
+            return res.status(400).json({ error: 'Customer email not found' });
+        }
+        
+        // Prepare data for email template
+        const workOrderData = {
+            workOrder: workOrder,
+            customer: {
+                first_name: workOrder.first_name,
+                last_name: workOrder.last_name,
+                phone: workOrder.phone,
+                email: workOrder.email,
+                address: workOrder.address,
+                city: workOrder.city,
+                state: workOrder.state,
+                zip_code: workOrder.zip_code
+            },
+            vehicle: {
+                year: workOrder.year,
+                make: workOrder.make,
+                model: workOrder.model,
+                vin: workOrder.vin,
+                license_plate: workOrder.license_plate,
+                mileage: workOrder.mileage
+            },
+            parts: partsResult,
+            labor: laborResult
+        };
+        
+        // Send completion email
+        const result = await emailService.sendWorkOrderCompletion(workOrderData);
+        
+        res.json({
+            message: 'Work order completion email sent successfully',
+            workOrderId: workOrderId,
+            ...result
+        });
+        
+    } catch (error) {
+        console.error('Send completion email error:', error);
+        res.status(500).json({ error: 'Failed to send completion email: ' + error.message });
+    }
+});
+
 // Check email service status
 app.get('/api/email/status', async (req, res) => {
     const savedConfig = await configStore.loadEmailConfig();
+    const hasPassword = await configStore.getDecryptedPassword() !== null;
+    
     res.json({
         configured: emailService.isConfigured,
         shopEmail: emailService.shopEmail || null,
@@ -1282,7 +1269,8 @@ app.get('/api/email/status', async (req, res) => {
         hasSavedConfig: savedConfig !== null,
         savedEmail: savedConfig?.email || null,
         savedShopName: savedConfig?.shopName || null,
-        needsPassword: savedConfig !== null && !emailService.isConfigured
+        hasStoredPassword: hasPassword,
+        needsPassword: savedConfig !== null && !emailService.isConfigured && !hasPassword
     });
 });
 
@@ -1295,6 +1283,23 @@ app.get('/api/email/status', async (req, res) => {
     }
 })();
 
-app.listen(port, () => {
-    console.log(`Server running on port ${port}`);
-});
+function startServer() {
+    const server = app.listen(port, () => {
+        console.log(`Server running on port ${port}`);
+    });
+
+    server.on('error', (err) => {
+        if (err.code === 'EADDRINUSE') {
+            console.log(`Port ${port} is in use, trying another port...`);
+            port++;
+            server.close(() => { // Close the server that failed to start
+                startServer(); // Try again with the new port
+            });
+        } else {
+            console.error('Server error:', err);
+        }
+    });
+}
+
+// Call startServer to begin listening
+startServer();

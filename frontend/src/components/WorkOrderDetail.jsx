@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 const API_BASE = 'http://localhost:5000/api';
 
-function WorkOrderDetail({ workOrderId, onClose, onDeleted }) {
+function WorkOrderDetail({ workOrderId, onClose, onDeleted, onStatusChanged }) {
   const [workOrderData, setWorkOrderData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -10,6 +10,8 @@ function WorkOrderDetail({ workOrderId, onClose, onDeleted }) {
   const [error, setError] = useState(null);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [showCompletionEmailPrompt, setShowCompletionEmailPrompt] = useState(false);
+  const [pendingStatus, setPendingStatus] = useState(null);
 
   useEffect(() => {
     if (workOrderId) {
@@ -87,6 +89,18 @@ function WorkOrderDetail({ workOrderId, onClose, onDeleted }) {
   };
 
   const handleStatusChange = async (newStatus) => {
+    // If status is changing to Complete and customer has email, show completion email prompt
+    if (newStatus === 'Complete' && (workOrderData?.workOrder?.email || workOrderData?.workOrder?.customer_email)) {
+      setPendingStatus(newStatus);
+      setShowCompletionEmailPrompt(true);
+      return;
+    }
+    
+    // Otherwise, update status normally (including Complete when no email)
+    await updateWorkOrderStatus(newStatus);
+  };
+  
+  const updateWorkOrderStatus = async (newStatus) => {
     setIsUpdatingStatus(true);
     try {
       const response = await fetch(`${API_BASE}/work-orders/${workOrderId}/status`, {
@@ -101,6 +115,10 @@ function WorkOrderDetail({ workOrderId, onClose, onDeleted }) {
         // Reload work order data to show updated status
         loadWorkOrderDetails();
         alert(`Work order status updated to: ${newStatus}`);
+        // Notify parent component that status has changed
+        if (onStatusChanged) {
+          onStatusChanged(workOrderId, newStatus);
+        }
       } else {
         const error = await response.json();
         alert('Error updating status: ' + error.message);
@@ -111,6 +129,45 @@ function WorkOrderDetail({ workOrderId, onClose, onDeleted }) {
     } finally {
       setIsUpdatingStatus(false);
     }
+  };
+  
+  const handleSendCompletionEmail = async () => {
+    setIsSendingEmail(true);
+    setShowCompletionEmailPrompt(false);
+    
+    try {
+      // Send completion email
+      const response = await fetch(`${API_BASE}/email/send-completion/${workOrderId}`, {
+        method: 'POST'
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        // Update status after email is sent
+        await updateWorkOrderStatus(pendingStatus);
+        alert(`Completion email sent to ${result.email} and status updated to Complete!`);
+      } else {
+        const error = await response.json();
+        // Still update status even if email fails
+        await updateWorkOrderStatus(pendingStatus);
+        alert(`Status updated to Complete, but failed to send email: ${error.error}`);
+      }
+    } catch (error) {
+      console.error('Error sending completion email:', error);
+      // Still update status even if email fails
+      await updateWorkOrderStatus(pendingStatus);
+      alert('Status updated to Complete, but there was a network error sending the email.');
+    } finally {
+      setIsSendingEmail(false);
+      setPendingStatus(null);
+    }
+  };
+  
+  const handleSkipCompletionEmail = async () => {
+    setShowCompletionEmailPrompt(false);
+    // Just update status without sending email
+    await updateWorkOrderStatus(pendingStatus);
+    setPendingStatus(null);
   };
 
   const formatCurrency = (cents) => {
@@ -570,6 +627,108 @@ function WorkOrderDetail({ workOrderId, onClose, onDeleted }) {
               <span style={{ color: '#ccc' }}>
                 {workOrder.signed_date ? formatDate(workOrder.signed_date) : 'Not signed'}
               </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Completion Email Prompt Modal */}
+      {showCompletionEmailPrompt && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 2000
+        }}>
+          <div style={{
+            backgroundColor: '#333',
+            padding: '30px',
+            borderRadius: '10px',
+            textAlign: 'center',
+            maxWidth: '500px',
+            border: '2px solid #4CAF50'
+          }}>
+            <div style={{
+              fontSize: '48px',
+              marginBottom: '20px'
+            }}>🎉</div>
+            <h3 style={{ color: '#4CAF50', marginTop: 0, fontSize: '20px' }}>
+              Work Order Complete!
+            </h3>
+            <p style={{ color: '#FFD329', marginBottom: '20px', lineHeight: '1.5' }}>
+              Would you like to send a completion notification email to the customer?
+            </p>
+            <div style={{
+              backgroundColor: '#444',
+              padding: '15px',
+              borderRadius: '8px',
+              marginBottom: '25px',
+              textAlign: 'left'
+            }}>
+              <div style={{ color: '#ccc', fontSize: '14px', marginBottom: '5px' }}>Customer:</div>
+              <div style={{ color: '#FFD329', fontWeight: 'bold' }}>
+                {workOrderData?.workOrder?.customer_name}
+              </div>
+              <div style={{ color: '#ccc', fontSize: '14px', marginTop: '8px' }}>Email:</div>
+              <div style={{ color: '#FFD329' }}>
+                {workOrderData?.workOrder?.email || workOrderData?.workOrder?.customer_email}
+              </div>
+            </div>
+            <div style={{
+              backgroundColor: '#2c3e50',
+              padding: '15px',
+              borderRadius: '8px',
+              marginBottom: '25px',
+              fontSize: '14px',
+              color: '#ccc'
+            }}>
+              📧 The email will include:
+              <ul style={{ margin: '10px 0', paddingLeft: '20px', textAlign: 'left' }}>
+                <li>Completion notification with celebration message</li>
+                <li>Complete work order receipt with all parts and labor</li>
+                <li>Pickup instructions and payment details</li>
+                <li>Thank you message from your shop</li>
+              </ul>
+            </div>
+            <div style={{ display: 'flex', gap: '15px', justifyContent: 'center' }}>
+              <button
+                onClick={handleSendCompletionEmail}
+                disabled={isSendingEmail}
+                style={{
+                  backgroundColor: isSendingEmail ? '#666' : '#4CAF50',
+                  color: 'white',
+                  padding: '12px 24px',
+                  fontSize: '16px',
+                  fontWeight: 'bold',
+                  border: 'none',
+                  borderRadius: '5px',
+                  cursor: isSendingEmail ? 'not-allowed' : 'pointer'
+                }}
+              >
+                {isSendingEmail ? 'Sending...' : '📧 Yes, Send Email'}
+              </button>
+              <button
+                onClick={handleSkipCompletionEmail}
+                disabled={isSendingEmail}
+                style={{
+                  backgroundColor: '#666',
+                  color: '#FFD329',
+                  padding: '12px 24px',
+                  fontSize: '16px',
+                  fontWeight: 'bold',
+                  border: '1px solid #888',
+                  borderRadius: '5px',
+                  cursor: isSendingEmail ? 'not-allowed' : 'pointer'
+                }}
+              >
+                No, Skip Email
+              </button>
             </div>
           </div>
         </div>
