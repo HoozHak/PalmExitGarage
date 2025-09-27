@@ -520,6 +520,67 @@ app.put('/api/customers/:id', (req, res) => {
     });
 });
 
+// Delete customer (with cascade delete of vehicles and work orders)
+app.delete('/api/customers/:id', (req, res) => {
+    const customerId = req.params.id;
+    
+    // First, let's get some information about what will be deleted for logging/confirmation
+    const infoQuery = `
+        SELECT 
+            c.customer_id,
+            CONCAT(c.first_name, ' ', c.last_name) as customer_name,
+            c.email,
+            COUNT(DISTINCT v.vehicle_id) as vehicle_count,
+            COUNT(DISTINCT wo.work_order_id) as work_order_count
+        FROM customers c
+        LEFT JOIN vehicles v ON c.customer_id = v.customer_id
+        LEFT JOIN work_orders wo ON c.customer_id = wo.customer_id
+        WHERE c.customer_id = ?
+        GROUP BY c.customer_id
+    `;
+    
+    db.query(infoQuery, [customerId], (err, infoResults) => {
+        if (err) {
+            console.error('Error fetching customer info for deletion:', err);
+            res.status(500).json({ error: 'Database error' });
+            return;
+        }
+        
+        if (infoResults.length === 0) {
+            res.status(404).json({ error: 'Customer not found' });
+            return;
+        }
+        
+        const customerInfo = infoResults[0];
+        console.log(`Deleting customer: ${customerInfo.customer_name} (${customerInfo.email})`);
+        console.log(`This will also delete: ${customerInfo.vehicle_count} vehicle(s), ${customerInfo.work_order_count} work order(s)`);
+        
+        // Now delete the customer (CASCADE will handle vehicles, work orders, etc.)
+        const deleteQuery = 'DELETE FROM customers WHERE customer_id = ?';
+        
+        db.query(deleteQuery, [customerId], (err, result) => {
+            if (err) {
+                console.error('Error deleting customer:', err);
+                res.status(500).json({ error: 'Database error' });
+                return;
+            }
+            
+            if (result.affectedRows === 0) {
+                res.status(404).json({ error: 'Customer not found' });
+                return;
+            }
+            
+            console.log(`Successfully deleted customer ${customerInfo.customer_name} and all related data`);
+            res.json({ 
+                message: 'Customer deleted successfully', 
+                deletedCustomer: customerInfo.customer_name,
+                vehiclesDeleted: customerInfo.vehicle_count,
+                workOrdersDeleted: customerInfo.work_order_count
+            });
+        });
+    });
+});
+
 // Update vehicle
 app.put('/api/vehicles/:id', (req, res) => {
     const { customer_id, year, make, model, vin, license_plate, color, mileage, engine_size, transmission, notes } = req.body;

@@ -131,6 +131,61 @@ function ExistingCustomer() {
     }
   };
 
+  const handleDeleteCustomer = async () => {
+    if (!selectedCustomer) return;
+
+    const customerName = `${selectedCustomer.first_name} ${selectedCustomer.last_name}`;
+    const vehicleCount = customerHistory?.vehicles?.length || 0;
+    const workOrderCount = customerHistory?.workOrders?.length || 0;
+
+    // Show confirmation dialog with details about what will be deleted
+    let confirmMessage = `Are you sure you want to delete customer "${customerName}"?\n\n`;
+    confirmMessage += 'This action cannot be undone and will permanently delete:\n';
+    confirmMessage += `• Customer: ${customerName}\n`;
+    if (vehicleCount > 0) {
+      confirmMessage += `• ${vehicleCount} vehicle(s)\n`;
+    }
+    if (workOrderCount > 0) {
+      confirmMessage += `• ${workOrderCount} work order(s)\n`;
+    }
+    confirmMessage += '\nType "DELETE" to confirm:';
+
+    const userInput = prompt(confirmMessage);
+    
+    if (userInput !== 'DELETE') {
+      if (userInput !== null) { // user didn't cancel
+        alert('Customer deletion cancelled. You must type "DELETE" exactly to confirm.');
+      }
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE}/customers/${selectedCustomer.customer_id}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        alert(`Customer deleted successfully!\n\n` +
+              `Deleted: ${result.deletedCustomer}\n` +
+              `Vehicles removed: ${result.vehiclesDeleted}\n` +
+              `Work orders removed: ${result.workOrdersDeleted}`);
+        
+        // Clear the current selection and refresh the customer list
+        setSelectedCustomer(null);
+        setCustomerHistory(null);
+        setSearchTerm('');
+        loadCustomers();
+      } else {
+        const error = await response.json();
+        alert('Error deleting customer: ' + error.error);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Network error: Could not connect to server');
+    }
+  };
+
   const formatCurrency = (cents) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -376,10 +431,29 @@ function ExistingCustomer() {
                           fontWeight: 'bold',
                           border: 'none',
                           borderRadius: '5px',
-                          cursor: 'pointer'
+                          cursor: 'pointer',
+                          marginRight: '5px'
                         }}
                       >
-                        Edit Customer
+                        ✏️ Edit Customer
+                      </button>
+                      <button
+                        onClick={handleDeleteCustomer}
+                        style={{
+                          backgroundColor: '#f44336',
+                          color: 'white',
+                          padding: '8px 16px',
+                          fontSize: '14px',
+                          fontWeight: 'bold',
+                          border: 'none',
+                          borderRadius: '5px',
+                          cursor: 'pointer',
+                          transition: 'background-color 0.3s'
+                        }}
+                        onMouseOver={e => e.currentTarget.style.backgroundColor = '#d32f2f'}
+                        onMouseOut={e => e.currentTarget.style.backgroundColor = '#f44336'}
+                      >
+                        🗑️ Delete Customer
                       </button>
                     </>
                   ) : (
