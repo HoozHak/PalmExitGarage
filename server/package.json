@@ -2,6 +2,12 @@
   "name": "palmexitgarage-server",
   "version": "0.1.0",
   "main": "index.js",
+  "license": "MIT",
+  "author": "Coty O'Dea (GitHub: HoozHak)",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/HoozHak/PalmExitGarage.git"
+  },
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",

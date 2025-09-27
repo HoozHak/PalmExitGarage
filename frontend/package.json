@@ -3,6 +3,12 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "license": "MIT",
+  "author": "Coty O'Dea (GitHub: HoozHak)",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/HoozHak/PalmExitGarage.git"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",

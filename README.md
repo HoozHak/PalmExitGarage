@@ -158,7 +158,8 @@ PalmExitGarage/
 │   ├── seed_comprehensive_vehicles.js  # Vehicle database seeder
 │   ├── seed_autozone_parts.js      # Parts catalog seeder
 │   └── package.json               # Backend dependencies
-├── docker-compose.yml             # Database container config
+├── docker-compose.yml             # 🐳 Database container config
+├── LICENSE                        # MIT License
 ├── README.md                      # This file
 └── .gitignore                     # Git ignore rules
 ```
@@ -248,6 +249,16 @@ PalmExitGarage/
 4. **Industry Ready**: Built for real auto repair shops with realistic data
 5. **Modern Stack**: Latest technologies with professional development practices
 6. **Business Automation**: Automatic customer communications and workflow
+
+---
+
+## License
+
+This project, [Palm Exit Garage](https://github.com/HoozHak/PalmExitGarage), is licensed under the MIT License.  
+
+Copyright (c) 2025 Coty O'Dea (GitHub: [HoozHak](https://github.com/HoozHak))
+
+You are free to use, modify, and distribute this project, but **please give proper attribution** by linking back to this repository and crediting the author.
 
 ---
 
