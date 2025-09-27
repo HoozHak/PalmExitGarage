@@ -78,6 +78,27 @@ class EmailService {
     }
   }
 
+  // Clear email configuration
+  async clearConfiguration() {
+    try {
+      // Clear the configuration file
+      await configStore.clearEmailConfig();
+      
+      // Reset service state
+      this.transporter = null;
+      this.isConfigured = false;
+      this.shopEmail = null;
+      this.shopName = null;
+      this.hasSavedConfig = false;
+      
+      console.log('Email service configuration cleared successfully');
+      return true;
+    } catch (error) {
+      console.error('Failed to clear email service configuration:', error);
+      return false;
+    }
+  }
+
   // Verify email configuration
   async verifyConnection() {
     if (!this.transporter) {

@@ -1318,6 +1318,26 @@ app.post('/api/email/send-completion/:workOrderId', async (req, res) => {
     }
 });
 
+// Clear email configuration
+app.delete('/api/email/clear', async (req, res) => {
+    try {
+        const success = await emailService.clearConfiguration();
+        
+        if (success) {
+            console.log('Email configuration cleared via API');
+            res.json({ 
+                message: 'Email configuration cleared successfully',
+                cleared: true 
+            });
+        } else {
+            res.status(500).json({ error: 'Failed to clear email configuration' });
+        }
+    } catch (error) {
+        console.error('Clear email configuration error:', error);
+        res.status(500).json({ error: 'Error clearing email configuration: ' + error.message });
+    }
+});
+
 // Check email service status
 app.get('/api/email/status', async (req, res) => {
     const savedConfig = await configStore.loadEmailConfig();

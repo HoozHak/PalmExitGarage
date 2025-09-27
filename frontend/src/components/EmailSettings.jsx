@@ -27,6 +27,7 @@ function EmailSettings() {
   const [testEmail, setTestEmail] = useState('');
   const [isConfiguring, setIsConfiguring] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
+  const [isClearing, setIsClearing] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
@@ -108,7 +109,7 @@ function EmailSettings() {
       });
 
       if (response.ok) {
-        const result = await response.json();
+        await response.json();
         setMessage('Email service configured successfully! You can now send receipts to customers.');
         loadEmailStatus();
         // Clear password for security
@@ -147,7 +148,7 @@ function EmailSettings() {
       });
 
       if (response.ok) {
-        const result = await response.json();
+        await response.json();
         setMessage(`Test email sent successfully to ${testEmail}! Check your inbox.`);
         setTestEmail('');
       } else {
@@ -159,6 +160,64 @@ function EmailSettings() {
       setError('Network error: Could not connect to server');
     } finally {
       setIsTesting(false);
+    }
+  };
+
+  const handleClearConfiguration = async () => {
+    // Show confirmation dialog
+    const confirmMessage = `Are you sure you want to delete the current email configuration?
+
+This will:
+• Remove saved Gmail credentials
+• Disable automatic email notifications
+• Require you to set up email again
+
+Type "DELETE" to confirm:`;
+    
+    const userConfirmation = prompt(confirmMessage);
+    
+    if (userConfirmation !== 'DELETE') {
+      if (userConfirmation !== null) {
+        setError('Email configuration deletion cancelled. You must type "DELETE" exactly.');
+      }
+      return;
+    }
+
+    setIsClearing(true);
+    setMessage('');
+    setError('');
+
+    try {
+      const response = await fetch(`${API_BASE}/email/clear`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      if (response.ok) {
+        await response.json();
+        setMessage('Email configuration deleted successfully! You can now set up a different email account.');
+        
+        // Reset form state
+        setEmailConfig({
+          email: '',
+          password: '',
+          shopName: 'Palm Exit Garage'
+        });
+        setTestEmail('');
+        
+        // Reload email status
+        await loadEmailStatus();
+      } else {
+        const errorData = await response.json();
+        setError('Failed to clear configuration: ' + errorData.error);
+      }
+    } catch (error) {
+      console.error('Clear configuration error:', error);
+      setError('Network error: Could not connect to server');
+    } finally {
+      setIsClearing(false);
     }
   };
 
@@ -256,6 +315,336 @@ function EmailSettings() {
     
     setTimeMessage('Reset to system time');
     setTimeError('');
+  };
+
+  const openGmailSetupGuide = () => {
+    const guideContent = `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Gmail SMTP Setup Guide - PalmExitGarage</title>
+          <style>
+              body {
+                  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+                  line-height: 1.6;
+                  color: #333;
+                  max-width: 1000px;
+                  margin: 0 auto;
+                  padding: 20px;
+                  background: #f5f5f5;
+              }
+              .container {
+                  background: white;
+                  border-radius: 10px;
+                  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                  padding: 30px;
+              }
+              .header {
+                  background: linear-gradient(135deg, #000 0%, #333 100%);
+                  color: #FFD329;
+                  padding: 20px;
+                  border-radius: 10px;
+                  text-align: center;
+                  margin-bottom: 30px;
+              }
+              .step {
+                  background: #f8f9fa;
+                  border-left: 4px solid #FFD329;
+                  margin: 20px 0;
+                  padding: 20px;
+                  border-radius: 0 8px 8px 0;
+              }
+              .step-number {
+                  background: #FFD329;
+                  color: #000;
+                  width: 30px;
+                  height: 30px;
+                  border-radius: 50%;
+                  display: inline-flex;
+                  align-items: center;
+                  justify-content: center;
+                  font-weight: bold;
+                  margin-right: 15px;
+              }
+              .step-title {
+                  font-size: 18px;
+                  font-weight: bold;
+                  color: #333;
+                  margin-bottom: 10px;
+              }
+              .warning {
+                  background: #fff3cd;
+                  border: 1px solid #ffeaa7;
+                  border-radius: 8px;
+                  padding: 15px;
+                  margin: 20px 0;
+              }
+              .success {
+                  background: #d4edda;
+                  border: 1px solid #c3e6cb;
+                  border-radius: 8px;
+                  padding: 15px;
+                  margin: 20px 0;
+              }
+              .code {
+                  background: #f1f3f4;
+                  border: 1px solid #dadce0;
+                  border-radius: 4px;
+                  padding: 8px 12px;
+                  font-family: 'Courier New', monospace;
+                  display: inline-block;
+                  margin: 5px 0;
+              }
+              .screenshot-placeholder {
+                  background: #e9ecef;
+                  border: 2px dashed #adb5bd;
+                  border-radius: 8px;
+                  padding: 40px 20px;
+                  text-align: center;
+                  color: #6c757d;
+                  margin: 15px 0;
+                  font-style: italic;
+              }
+              .nav-buttons {
+                  position: fixed;
+                  bottom: 20px;
+                  right: 20px;
+                  z-index: 1000;
+              }
+              .nav-buttons button {
+                  background: #FFD329;
+                  color: #000;
+                  border: none;
+                  padding: 12px 20px;
+                  border-radius: 6px;
+                  font-weight: bold;
+                  cursor: pointer;
+                  margin-left: 10px;
+              }
+              .nav-buttons button:hover {
+                  background: #e6bd24;
+              }
+              .troubleshooting {
+                  background: #fff;
+                  border: 1px solid #e3e6e8;
+                  border-radius: 8px;
+                  padding: 20px;
+                  margin: 20px 0;
+              }
+              ul li {
+                  margin-bottom: 8px;
+              }
+              .highlight {
+                  background: #fff3cd;
+                  padding: 2px 6px;
+                  border-radius: 3px;
+                  font-weight: bold;
+              }
+          </style>
+      </head>
+      <body>
+          <div class="container">
+              <div class="header">
+                  <h1>📧 Gmail SMTP Setup Guide</h1>
+                  <p>Complete Step-by-Step Instructions for PalmExitGarage Email Integration</p>
+              </div>
+
+              <div class="warning">
+                  <strong>⚠️ Important:</strong> This guide requires you to have a Gmail account with 2-Factor Authentication enabled. 
+                  The process takes about 5-10 minutes to complete.
+              </div>
+
+              <!-- Step 1 -->
+              <div class="step">
+                  <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                      <div class="step-number">1</div>
+                      <div class="step-title">Enable 2-Factor Authentication</div>
+                  </div>
+                  <p><strong>If you haven't already:</strong></p>
+                  <ul>
+                      <li>Go to <span class="code">myaccount.google.com</span></li>
+                      <li>Click <span class="highlight">"Security"</span> in the left sidebar</li>
+                      <li>Under "Signing in to Google", click <span class="highlight">"2-Step Verification"</span></li>
+                      <li>Follow the setup process to enable 2FA using your phone</li>
+                  </ul>
+                  <div class="screenshot-placeholder">
+                      📱 You'll need your phone to receive verification codes
+                  </div>
+              </div>
+
+              <!-- Step 2 -->
+              <div class="step">
+                  <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                      <div class="step-number">2</div>
+                      <div class="step-title">Access Google Account Security</div>
+                  </div>
+                  <ul>
+                      <li>Visit <span class="code">myaccount.google.com</span></li>
+                      <li>Sign in with your Gmail account</li>
+                      <li>Click <span class="highlight">"Security"</span> in the left navigation menu</li>
+                  </ul>
+                  <div class="screenshot-placeholder">
+                      🔒 Look for the "Security" section with shield icon
+                  </div>
+              </div>
+
+              <!-- Step 3 -->
+              <div class="step">
+                  <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                      <div class="step-number">3</div>
+                      <div class="step-title">Generate App Password</div>
+                  </div>
+                  <p>In the Security section:</p>
+                  <ul>
+                      <li>Scroll down to <span class="highlight">"Signing in to Google"</span> section</li>
+                      <li>Click <span class="highlight">"App passwords"</span> (you must have 2FA enabled to see this)</li>
+                      <li>You may be asked to sign in again</li>
+                  </ul>
+                  <div class="screenshot-placeholder">
+                      🔑 App passwords option appears only after 2FA is enabled
+                  </div>
+              </div>
+
+              <!-- Step 4 -->
+              <div class="step">
+                  <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                      <div class="step-number">4</div>
+                      <div class="step-title">Create App Password for Mail</div>
+                  </div>
+                  <ul>
+                      <li>In the "Select app" dropdown, choose <span class="highlight">"Mail"</span></li>
+                      <li>In the "Select device" dropdown, choose <span class="highlight">"Other (custom name)"</span></li>
+                      <li>Type: <span class="code">PalmExitGarage</span> as the device name</li>
+                      <li>Click <span class="highlight">"Generate"</span></li>
+                  </ul>
+                  <div class="screenshot-placeholder">
+                      📋 A 16-character password will be generated (like: abcd efgh ijkl mnop)
+                  </div>
+              </div>
+
+              <!-- Step 5 -->
+              <div class="step">
+                  <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                      <div class="step-number">5</div>
+                      <div class="step-title">Copy Your App Password</div>
+                  </div>
+                  <ul>
+                      <li>Google will show a <span class="highlight">16-character password</span> (with spaces)</li>
+                      <li>Example format: <span class="code">abcd efgh ijkl mnop</span></li>
+                      <li><strong>Copy this entire password</strong> (including spaces)</li>
+                      <li>Keep this window open until you've configured PalmExitGarage</li>
+                  </ul>
+                  <div class="warning">
+                      <strong>⚠️ Important:</strong> This password will only be shown once! 
+                      If you lose it, you'll need to generate a new one.
+                  </div>
+              </div>
+
+              <!-- Step 6 -->
+              <div class="step">
+                  <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                      <div class="step-number">6</div>
+                      <div class="step-title">Configure PalmExitGarage</div>
+                  </div>
+                  <p>Return to PalmExitGarage Email Settings:</p>
+                  <ul>
+                      <li><strong>Gmail Address:</strong> Enter your full Gmail address (example@gmail.com)</li>
+                      <li><strong>Shop Name:</strong> Enter your shop name (appears in emails)</li>
+                      <li><strong>Gmail App Password:</strong> Paste the 16-character password from Step 5</li>
+                      <li>Click <span class="highlight">"Configure Email"</span></li>
+                  </ul>
+                  <div class="success">
+                      ✅ If successful, you'll see "Email service configured successfully!"
+                  </div>
+              </div>
+
+              <!-- Step 7 -->
+              <div class="step">
+                  <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                      <div class="step-number">7</div>
+                      <div class="step-title">Test Your Setup</div>
+                  </div>
+                  <ul>
+                      <li>In the "Test Email Service" section</li>
+                      <li>Enter a test email address (your own email works great)</li>
+                      <li>Click <span class="highlight">"Send Test Email"</span></li>
+                      <li>Check your inbox for the test email</li>
+                  </ul>
+                  <div class="success">
+                      🎉 Success! Your Gmail SMTP is now configured and ready to send customer receipts automatically.
+                  </div>
+              </div>
+
+              <!-- Troubleshooting -->
+              <div class="troubleshooting">
+                  <h2>🛠️ Troubleshooting Common Issues</h2>
+                  
+                  <h3>"App passwords" option not visible</h3>
+                  <ul>
+                      <li>✅ Ensure 2-Factor Authentication is fully enabled</li>
+                      <li>✅ Sign out and sign back in to Google</li>
+                      <li>✅ Use a desktop browser (mobile may not show all options)</li>
+                  </ul>
+
+                  <h3>"Configuration failed" or "Authentication failed"</h3>
+                  <ul>
+                      <li>✅ Double-check your Gmail address is correct</li>
+                      <li>✅ Make sure you copied the full 16-character App Password</li>
+                      <li>✅ Try generating a new App Password</li>
+                      <li>✅ Ensure you're using the App Password, NOT your regular Gmail password</li>
+                  </ul>
+
+                  <h3>"Test email failed to send"</h3>
+                  <ul>
+                      <li>✅ Check your internet connection</li>
+                      <li>✅ Verify the test email address is correct</li>
+                      <li>✅ Wait a few minutes and try again</li>
+                      <li>✅ Check Gmail's sending limits (500 emails/day)</li>
+                  </ul>
+
+                  <h3>Need to change email accounts?</h3>
+                  <ul>
+                      <li>✅ Use "Delete Email Configuration" button in PalmExitGarage</li>
+                      <li>✅ Follow this guide again with your new Gmail account</li>
+                  </ul>
+              </div>
+
+              <!-- Security Notes -->
+              <div class="warning">
+                  <h3>🔒 Security & Privacy Notes</h3>
+                  <ul>
+                      <li><strong>App Password Storage:</strong> PalmExitGarage encrypts and stores your App Password locally</li>
+                      <li><strong>Email Limits:</strong> Gmail allows 500 emails per day for free</li>
+                      <li><strong>Revoke Access:</strong> You can revoke the App Password anytime in Google Account settings</li>
+                      <li><strong>Regular Password:</strong> Never use your regular Gmail password - only use App Passwords</li>
+                  </ul>
+              </div>
+
+              <div style="text-align: center; margin-top: 40px; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+                  <h3>✅ Setup Complete!</h3>
+                  <p>Your Gmail SMTP is now ready to send professional work order receipts to your customers automatically.</p>
+                  <p>Return to PalmExitGarage to test your configuration.</p>
+              </div>
+          </div>
+
+          <div class="nav-buttons">
+              <button onclick="window.print()">🖨️ Print Guide</button>
+              <button onclick="window.close()">✅ Done</button>
+          </div>
+      </body>
+      </html>
+    `;
+
+    const newWindow = window.open('', '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
+    if (newWindow) {
+      newWindow.document.write(guideContent);
+      newWindow.document.close();
+      newWindow.focus();
+    } else {
+      alert('Please allow pop-ups for this site to view the Gmail setup guide.');
+    }
   };
 
   return (
@@ -629,6 +1018,52 @@ function EmailSettings() {
                 )}
               </div>
             </div>
+            
+            {/* Clear Configuration Button */}
+            {(emailStatus.configured || emailStatus.hasSavedConfig) && (
+              <div style={{
+                marginTop: '20px',
+                paddingTop: '15px',
+                borderTop: '1px solid #555'
+              }}>
+                <button
+                  onClick={handleClearConfiguration}
+                  disabled={isClearing}
+                  style={{
+                    backgroundColor: isClearing ? '#666' : '#f44336',
+                    color: 'white',
+                    padding: '10px 20px',
+                    fontSize: '14px',
+                    fontWeight: 'bold',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: isClearing ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  {isClearing ? (
+                    <>
+                      <span>⏳</span>
+                      <span>Clearing...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>🗑️</span>
+                      <span>Delete Email Configuration</span>
+                    </>
+                  )}
+                </button>
+                <p style={{
+                  fontSize: '12px',
+                  color: '#ccc',
+                  margin: '8px 0 0 0'
+                }}>
+                  Remove current email settings to configure a different SMTP setup
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Messages */}
@@ -665,7 +1100,36 @@ function EmailSettings() {
             borderRadius: '10px',
             marginBottom: '30px'
           }}>
-            <h3 style={{ marginTop: 0, color: '#FFD329' }}>📋 Gmail Setup Instructions</h3>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '20px',
+              flexWrap: 'wrap',
+              gap: '15px'
+            }}>
+              <h3 style={{ marginTop: 0, marginBottom: 0, color: '#FFD329' }}>📋 Gmail Setup Instructions</h3>
+              <button
+                onClick={openGmailSetupGuide}
+                style={{
+                  backgroundColor: '#FFD329',
+                  color: '#000',
+                  padding: '12px 24px',
+                  fontSize: '16px',
+                  fontWeight: 'bold',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  whiteSpace: 'nowrap',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                }}
+              >
+                🚀 Open Detailed Guide
+              </button>
+            </div>
             <ol style={{ paddingLeft: '20px', color: '#ccc' }}>
               <li style={{ marginBottom: '10px' }}>
                 <strong>Enable 2-Factor Authentication</strong> on your Gmail account
@@ -684,10 +1148,47 @@ function EmailSettings() {
               backgroundColor: '#333',
               padding: '15px',
               borderRadius: '5px',
-              marginTop: '15px'
+              marginTop: '15px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: '15px'
             }}>
-              <p style={{ margin: 0, fontSize: '14px', color: '#FFD329' }}>
+              <p style={{ margin: 0, fontSize: '14px', color: '#FFD329', flex: 1 }}>
                 💡 <strong>Why App Password?</strong> Gmail requires App Passwords for security when accessing from applications like this one.
+              </p>
+              <button
+                onClick={openGmailSetupGuide}
+                style={{
+                  backgroundColor: '#4CAF50',
+                  color: 'white',
+                  padding: '10px 20px',
+                  fontSize: '14px',
+                  fontWeight: 'bold',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                📖 Detailed Setup Guide
+              </button>
+            </div>
+            
+            {/* Additional Quick Help */}
+            <div style={{
+              backgroundColor: '#2a2a2a',
+              padding: '15px',
+              borderRadius: '5px',
+              marginTop: '10px',
+              textAlign: 'center'
+            }}>
+              <p style={{ margin: 0, fontSize: '13px', color: '#ccc' }}>
+                ❓ <strong>Need help?</strong> Click the "Detailed Setup Guide" button above for complete step-by-step instructions with screenshots and troubleshooting tips.
               </p>
             </div>
           </div>
@@ -893,13 +1394,16 @@ function EmailSettings() {
                 <strong>100% Free:</strong> Gmail SMTP allows up to 500 emails per day at no cost
               </li>
               <li style={{ marginBottom: '8px' }}>
-                <strong>Security:</strong> Your App Password is stored temporarily in memory and not saved to disk
+                <strong>Security:</strong> Your App Password is encrypted and stored locally
               </li>
               <li style={{ marginBottom: '8px' }}>
                 <strong>Auto-Send:</strong> Once configured, receipts will be sent automatically when work orders are completed
               </li>
               <li style={{ marginBottom: '8px' }}>
                 <strong>Customer Email Required:</strong> Make sure to collect customer email addresses during intake
+              </li>
+              <li style={{ marginBottom: '8px' }}>
+                <strong>Change Email:</strong> Use "Delete Email Configuration" to remove current settings and set up a different email account
               </li>
             </ul>
           </div>
