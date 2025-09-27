@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Work Order Signature - Palm Exit Garage</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: white;
+        }
+        #signature-root {
+            width: 100%;
+            min-height: 100vh;
+        }
+    </style>
+</head>
+<body>
+    <div id="signature-root"></div>
+    
+    <script>
+        // This will be populated by the parent window when opening
+        window.addEventListener('load', function() {
+            // Get data from URL parameters or window.opener
+            const urlParams = new URLSearchParams(window.location.search);
+            const workOrderId = urlParams.get('workOrderId');
+            
+            if (workOrderId && window.opener) {
+                // Request data from parent window
+                window.opener.postMessage({
+                    type: 'REQUEST_SIGNATURE_DATA',
+                    workOrderId: workOrderId
+                }, '*');
+            }
+        });
+        
+        // Listen for data from parent window
+        window.addEventListener('message', function(event) {
+            if (event.data.type === 'SIGNATURE_DATA') {
+                // Render the signature component with the received data
+                renderSignatureComponent(event.data);
+            }
+        });
+        
+        function renderSignatureComponent(data) {
+            // This will be handled by React when we integrate it
+            console.log('Rendering signature component with data:', data);
+        }
+    </script>
+</body>
+</html>

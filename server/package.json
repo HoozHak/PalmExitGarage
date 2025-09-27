@@ -1,0 +1,23 @@
+{
+  "name": "palmexitgarage-server",
+  "version": "0.1.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "migrate": "node migrate.js",
+    "seed": "node seed.js",
+    "seed-vehicles": "node seed_vehicles.js",
+    "seed-labor": "node seed_labor.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "mysql2": "^3.6.0",
+    "nodemailer": "^7.0.6"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.22"
+  }
+}

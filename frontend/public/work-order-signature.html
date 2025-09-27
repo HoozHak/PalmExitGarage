@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Work Order Signature - Palm Exit Garage</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background-color: white;
+            color: black;
+            line-height: 1.4;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 3px solid #FFD329;
+            padding-bottom: 20px;
+        }
+        .header h1 {
+            color: #000;
+            margin: 0 0 10px 0;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .work-order-details {
+            margin-bottom: 30px;
+        }
+        .work-order-details h2 {
+            color: #000;
+            border-bottom: 2px solid #FFD329;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 20px;
+        }
+        .info-section h3 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        .items-section {
+            margin-bottom: 30px;
+        }
+        .items-section h3 {
+            color: #333;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 10px;
+        }
+        .item-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .cost-summary {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f5f5f5;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+        .cost-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 18px;
+            font-weight: bold;
+            padding-top: 10px;
+            border-top: 2px solid #FFD329;
+        }
+        .legal-disclaimer {
+            background-color: #fff9e6;
+            border: 2px solid #FFD329;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 8px;
+        }
+        .legal-disclaimer h3 {
+            color: #000;
+            margin-top: 0;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 18px;
+        }
+        .legal-disclaimer p {
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .signature-section {
+            background-color: #f9f9f9;
+            border: 2px solid #333;
+            padding: 25px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+        .signature-section h3 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            text-align: center;
+            color: #000;
+        }
+        .signature-canvas {
+            border: 2px solid #333;
+            border-radius: 8px;
+            background-color: white;
+            cursor: crosshair;
+            display: block;
+            margin: 0 auto;
+        }
+        .signature-controls {
+            text-align: center;
+            margin-top: 15px;
+        }
+        .name-input {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            background-color: white;
+            margin-bottom: 20px;
+        }
+        .button {
+            padding: 12px 25px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .button-secondary {
+            background-color: #666;
+            color: white;
+        }
+        .button-primary {
+            background-color: #4CAF50;
+            color: white;
+            font-weight: bold;
+        }
+        .button-primary:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .footer {
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            border-top: 1px solid #ddd;
+            padding-top: 15px;
+            margin-top: 30px;
+        }
+        .loading {
+            text-align: center;
+            padding: 50px;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div class="loading" id="loading">Loading work order details...</div>
+    
+    <div class="container" id="main-content" style="display: none;">
+        <!-- Header -->
+        <div class="header">
+            <h1>🏁 PALM EXIT GARAGE</h1>
+            <p>Professional Auto Repair Services</p>
+        </div>
+
+        <!-- Work Order Details -->
+        <div class="work-order-details">
+            <h2>Work Order #<span id="work-order-id"></span></h2>
+            
+            <div class="info-grid">
+                <div class="info-section">
+                    <h3>Customer Information</h3>
+                    <p><strong>Name:</strong> <span id="customer-name"></span></p>
+                    <p><strong>Phone:</strong> <span id="customer-phone"></span></p>
+                    <p><strong>Email:</strong> <span id="customer-email"></span></p>
+                </div>
+                <div class="info-section">
+                    <h3>Vehicle Information</h3>
+                    <p><strong>Vehicle:</strong> <span id="vehicle-info"></span></p>
+                    <p><strong>VIN:</strong> <span id="vehicle-vin"></span></p>
+                    <p><strong>License Plate:</strong> <span id="vehicle-plate"></span></p>
+                </div>
+            </div>
+            
+            <p><strong>Date:</strong> <span id="current-date"></span></p>
+        </div>
+
+        <!-- Work Order Items -->
+        <div class="items-section">
+            <h3>Services & Parts</h3>
+            
+            <div id="parts-section" style="margin-bottom: 20px;">
+                <h4>Parts:</h4>
+                <div id="parts-list"></div>
+            </div>
+
+            <div id="labor-section" style="margin-bottom: 20px;">
+                <h4>Labor:</h4>
+                <div id="labor-list"></div>
+            </div>
+
+            <div id="notes-section" style="margin-bottom: 20px;">
+                <h4>Notes:</h4>
+                <p id="work-order-notes" style="background-color: #f9f9f9; padding: 10px; border-radius: 4px; border: 1px solid #ddd;"></p>
+            </div>
+
+            <!-- Cost Summary -->
+            <div class="cost-summary">
+                <div class="cost-row">
+                    <span>Subtotal:</span>
+                    <strong id="subtotal"></strong>
+                </div>
+                <div class="cost-row">
+                    <span>Tax:</span>
+                    <strong id="tax"></strong>
+                </div>
+                <div class="total-row">
+                    <span>TOTAL:</span>
+                    <span id="total"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Legal Disclaimer -->
+        <div class="legal-disclaimer">
+            <h3>Work Order Acknowledgment & Liability Release</h3>
+            <p>By signing this Work Order, I acknowledge and agree to the following:</p>
+            <p>• I authorize Palm Exit Garage and its technicians to perform the repairs and/or services listed on this Work Order.</p>
+            <p>• I accept full responsibility for all parts, labor, fees, and related charges associated with these repairs and agree to pay in full upon completion of service.</p>
+            <p>• I understand that Palm Exit Garage has made no guarantee, express or implied, regarding the future performance, reliability, or longevity of the repaired vehicle, parts, or related systems.</p>
+            <p>• I acknowledge that Palm Exit Garage and its employees shall not be held liable for any subsequent mechanical, electrical, or structural issues that arise after the completion of the authorized repairs.</p>
+            <p>• I release Palm Exit Garage and its employees from any claims, damages, or liabilities that may arise after the vehicle is returned to me, whether related or unrelated to the services performed.</p>
+            <p>• I understand that additional repairs or services not listed here will require separate authorization and may involve additional charges.</p>
+            <p style="font-weight: bold; margin-top: 15px;">By signing below, I confirm that I have read, understood, and agree to the terms stated above.</p>
+        </div>
+
+        <!-- Signature Section -->
+        <div class="signature-section">
+            <h3>Customer Signature Required</h3>
+            
+            <label style="display: block; margin-bottom: 8px; font-weight: bold;">
+                📌 Printed Name:
+            </label>
+            <input type="text" id="customer-name-input" class="name-input" placeholder="Please enter your full name">
+            
+            <label style="display: block; margin-bottom: 15px; font-weight: bold; text-align: center;">
+                📌 Signature:
+            </label>
+            
+            <!-- Signature Mode Toggle -->
+            <div style="text-align: center; margin-bottom: 15px;">
+                <button class="button button-secondary" id="draw-mode-btn" onclick="switchToDrawMode()" style="margin-right: 10px;">✏️ Draw Signature</button>
+                <button class="button button-secondary" id="type-mode-btn" onclick="switchToTypeMode()">⌨️ Type to Sign</button>
+            </div>
+            
+            <!-- Draw Signature Section -->
+            <div id="draw-signature-section" style="text-align: center;">
+                <canvas id="signature-canvas" class="signature-canvas" width="500" height="150"></canvas>
+                <div style="margin-top: 10px;">
+                    <button class="button button-secondary" onclick="clearSignature()">Clear Signature</button>
+                </div>
+            </div>
+            
+            <!-- Type Signature Section -->
+            <div id="type-signature-section" style="display: none; text-align: center;">
+                <div style="background-color: #fff9e6; border: 2px solid #FFD329; padding: 15px; border-radius: 5px; margin-bottom: 15px; font-size: 14px; line-height: 1.5;">
+                    <p style="margin: 0; font-weight: bold; color: #000;">Electronic Signature Acknowledgment:</p>
+                    <p style="margin: 10px 0 0 0; color: #333;">By typing my name below, I acknowledge that this constitutes my legal electronic signature and that I agree to all terms and conditions stated in this Work Order. This typed signature has the same legal effect as a handwritten signature.</p>
+                </div>
+                
+                <div style="border: 2px solid #333; background-color: white; padding: 20px; border-radius: 8px; min-height: 100px; position: relative;">
+                    <input type="text" id="typed-signature-input" placeholder="Type your full name here" 
+                           style="width: 100%; font-size: 24px; font-family: 'Brush Script MT', cursive, serif; text-align: center; border: none; outline: none; background: transparent; padding: 20px 0;"
+                           oninput="updateTypedSignature()" />
+                    <div style="position: absolute; bottom: 5px; right: 10px; font-size: 12px; color: #666;">Electronic Signature</div>
+                </div>
+                
+                <div style="margin-top: 10px;">
+                    <button class="button button-secondary" onclick="clearTypedSignature()">Clear Signature</button>
+                </div>
+            </div>
+            
+            <div class="signature-controls" style="margin-top: 20px;">
+                <button class="button button-secondary" onclick="printWorkOrder()">🖨️ Print Work Order</button>
+                <button class="button button-primary" id="submit-btn" onclick="submitSignedWorkOrder()" disabled>
+                    ✅ Submit Signed Work Order
+                </button>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>Palm Exit Garage - Professional Auto Repair Services</p>
+            <p>Thank you for choosing our services!</p>
+        </div>
+    </div>
+
+    <script>
+        let signatureData = null;
+        let isDrawing = false;
+        let lastPos = { x: 0, y: 0 };
+        let hasSignature = false;
+        let signatureMode = 'draw'; // 'draw' or 'type'
+        let typedSignature = '';
+
+        // Initialize signature canvas
+        const canvas = document.getElementById('signature-canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Set canvas properties
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 2;
+        
+        // Set white background
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Mouse events for signature
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing);
+
+        // Name input event
+        document.getElementById('customer-name-input').addEventListener('input', checkFormValid);
+
+        function startDrawing(e) {
+            isDrawing = true;
+            const pos = getMousePos(canvas, e);
+            lastPos = pos;
+            hasSignature = true;
+            checkFormValid();
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            
+            const currentPos = getMousePos(canvas, e);
+            
+            ctx.beginPath();
+            ctx.moveTo(lastPos.x, lastPos.y);
+            ctx.lineTo(currentPos.x, currentPos.y);
+            ctx.stroke();
+            
+            lastPos = currentPos;
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+        }
+
+        function getMousePos(canvas, e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            
+            return {
+                x: (e.clientX - rect.left) * scaleX,
+                y: (e.clientY - rect.top) * scaleY
+            };
+        }
+
+        function clearSignature() {
+            if (signatureMode === 'draw') {
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+            hasSignature = false;
+            checkFormValid();
+        }
+
+        function checkFormValid() {
+            const nameInput = document.getElementById('customer-name-input');
+            const submitBtn = document.getElementById('submit-btn');
+            
+            if (hasSignature && nameInput.value.trim()) {
+                submitBtn.disabled = false;
+            } else {
+                submitBtn.disabled = true;
+            }
+        }
+
+        // Signature mode switching functions
+        function switchToDrawMode() {
+            signatureMode = 'draw';
+            document.getElementById('draw-signature-section').style.display = 'block';
+            document.getElementById('type-signature-section').style.display = 'none';
+            document.getElementById('draw-mode-btn').style.backgroundColor = '#FFD329';
+            document.getElementById('draw-mode-btn').style.color = 'black';
+            document.getElementById('type-mode-btn').style.backgroundColor = '#666';
+            document.getElementById('type-mode-btn').style.color = 'white';
+            
+            // Clear typed signature when switching to draw mode
+            typedSignature = '';
+            document.getElementById('typed-signature-input').value = '';
+            
+            checkFormValid();
+        }
+
+        function switchToTypeMode() {
+            signatureMode = 'type';
+            document.getElementById('draw-signature-section').style.display = 'none';
+            document.getElementById('type-signature-section').style.display = 'block';
+            document.getElementById('type-mode-btn').style.backgroundColor = '#FFD329';
+            document.getElementById('type-mode-btn').style.color = 'black';
+            document.getElementById('draw-mode-btn').style.backgroundColor = '#666';
+            document.getElementById('draw-mode-btn').style.color = 'white';
+            
+            // Clear drawn signature when switching to type mode
+            clearSignature();
+            
+            // Focus on the typed signature input
+            setTimeout(() => {
+                document.getElementById('typed-signature-input').focus();
+            }, 100);
+        }
+
+        function updateTypedSignature() {
+            const typedInput = document.getElementById('typed-signature-input');
+            typedSignature = typedInput.value.trim();
+            
+            if (typedSignature.length > 0) {
+                hasSignature = true;
+            } else {
+                hasSignature = false;
+            }
+            
+            checkFormValid();
+        }
+
+        function clearTypedSignature() {
+            document.getElementById('typed-signature-input').value = '';
+            typedSignature = '';
+            hasSignature = false;
+            checkFormValid();
+        }
+
+        function generateTypedSignatureImage() {
+            // Create a temporary canvas to generate signature image from typed text
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = 500;
+            tempCanvas.height = 150;
+            const tempCtx = tempCanvas.getContext('2d');
+            
+            // Set white background
+            tempCtx.fillStyle = 'white';
+            tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+            
+            // Draw the typed signature
+            tempCtx.fillStyle = 'black';
+            tempCtx.font = '36px "Brush Script MT", cursive, serif';
+            tempCtx.textAlign = 'center';
+            tempCtx.textBaseline = 'middle';
+            tempCtx.fillText(typedSignature, tempCanvas.width / 2, tempCanvas.height / 2);
+            
+            // Add "Electronic Signature" watermark
+            tempCtx.font = '12px Arial, sans-serif';
+            tempCtx.fillStyle = '#666';
+            tempCtx.textAlign = 'right';
+            tempCtx.textBaseline = 'bottom';
+            tempCtx.fillText('Electronic Signature', tempCanvas.width - 10, tempCanvas.height - 10);
+            
+            return tempCanvas.toDataURL('image/png');
+        }
+
+        function formatCurrency(cents) {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD'
+            }).format(cents / 100);
+        }
+
+        function formatDate() {
+            return new Date().toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        }
+
+        async function submitSignedWorkOrder() {
+            const nameInput = document.getElementById('customer-name-input');
+            const submitBtn = document.getElementById('submit-btn');
+            
+            if (!hasSignature || !nameInput.value.trim()) {
+                alert('Please provide your signature and printed name.');
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = '⏳ Submitting...';
+
+            try {
+                let signatureDataURL;
+                let signatureType;
+                
+                if (signatureMode === 'draw') {
+                    // Use drawn signature from canvas
+                    signatureDataURL = canvas.toDataURL('image/png');
+                    signatureType = 'drawn';
+                } else {
+                    // Generate signature image from typed text
+                    signatureDataURL = generateTypedSignatureImage();
+                    signatureType = 'typed';
+                }
+                
+                const response = await fetch(`http://localhost:5000/api/work-orders/${signatureData.workOrderData.work_order_id}/signature`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        signature_data: signatureDataURL,
+                        customer_signature_name: nameInput.value.trim(),
+                        signature_type: signatureType,
+                        status: 'approved',
+                        signed_date: new Date().toISOString()
+                    }),
+                });
+
+                if (response.ok) {
+                    const successMessage = signatureType === 'typed' 
+                        ? 'Work order electronically signed successfully! Your typed signature has been recorded and you will receive a copy for your records.'
+                        : 'Work order signed successfully! You will receive a copy for your records.';
+                    alert(successMessage);
+                    window.close();
+                } else {
+                    const error = await response.json();
+                    alert('Error saving signature: ' + error.message);
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = '✅ Submit Signed Work Order';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Network error: Could not save signature');
+                submitBtn.disabled = false;
+                submitBtn.textContent = '✅ Submit Signed Work Order';
+            }
+        }
+
+        function printWorkOrder() {
+            window.print();
+        }
+
+        function loadWorkOrderData(data) {
+            signatureData = data;
+            
+            // Populate work order details
+            document.getElementById('work-order-id').textContent = data.workOrderData.work_order_id;
+            document.getElementById('customer-name').textContent = `${data.customerData.first_name} ${data.customerData.last_name}`;
+            document.getElementById('customer-phone').textContent = data.customerData.phone || 'Not provided';
+            document.getElementById('customer-email').textContent = data.customerData.email || 'Not provided';
+            
+            if (data.vehicleData) {
+                document.getElementById('vehicle-info').textContent = `${data.vehicleData.year} ${data.vehicleData.make} ${data.vehicleData.model}`;
+                document.getElementById('vehicle-vin').textContent = data.vehicleData.vin || 'Not provided';
+                document.getElementById('vehicle-plate').textContent = data.vehicleData.license_plate || 'Not provided';
+            } else {
+                document.getElementById('vehicle-info').textContent = 'No vehicle specified';
+                document.getElementById('vehicle-vin').textContent = 'N/A';
+                document.getElementById('vehicle-plate').textContent = 'N/A';
+            }
+            
+            document.getElementById('current-date').textContent = formatDate();
+            
+            // Populate parts
+            const partsList = document.getElementById('parts-list');
+            if (data.workOrderData.parts && data.workOrderData.parts.length > 0) {
+                partsList.innerHTML = '';
+                data.workOrderData.parts.forEach(part => {
+                    partsList.innerHTML += `
+                        <div class="item-row">
+                            <span>${part.brand} - ${part.item} (Qty: ${part.quantity})</span>
+                            <span>${formatCurrency(part.cost_cents * part.quantity)}</span>
+                        </div>
+                    `;
+                });
+            } else {
+                document.getElementById('parts-section').style.display = 'none';
+            }
+            
+            // Populate labor
+            const laborList = document.getElementById('labor-list');
+            if (data.workOrderData.labor && data.workOrderData.labor.length > 0) {
+                laborList.innerHTML = '';
+                data.workOrderData.labor.forEach(labor => {
+                    laborList.innerHTML += `
+                        <div class="item-row">
+                            <span>${labor.labor_name} (${labor.quantity} hrs)</span>
+                            <span>${formatCurrency(labor.cost_cents * labor.quantity)}</span>
+                        </div>
+                    `;
+                });
+            } else {
+                document.getElementById('labor-section').style.display = 'none';
+            }
+            
+            // Populate notes
+            if (data.workOrderData.notes) {
+                document.getElementById('work-order-notes').textContent = data.workOrderData.notes;
+            } else {
+                document.getElementById('notes-section').style.display = 'none';
+            }
+            
+            // Populate costs
+            document.getElementById('subtotal').textContent = formatCurrency(data.workOrderData.subtotal_cents);
+            document.getElementById('tax').textContent = formatCurrency(data.workOrderData.tax_cents);
+            document.getElementById('total').textContent = formatCurrency(data.workOrderData.total_cents);
+            
+            // Pre-fill customer name
+            document.getElementById('customer-name-input').value = `${data.customerData.first_name} ${data.customerData.last_name}`;
+            
+            // Initialize signature mode (default to draw mode)
+            switchToDrawMode();
+            
+            // Show main content
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('main-content').style.display = 'block';
+        }
+
+        // Get data from URL parameters (passed from parent window)
+        window.addEventListener('load', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const dataParam = urlParams.get('data');
+            
+            if (dataParam) {
+                try {
+                    const data = JSON.parse(decodeURIComponent(dataParam));
+                    loadWorkOrderData(data);
+                } catch (error) {
+                    console.error('Error parsing data:', error);
+                    document.getElementById('loading').textContent = 'Error loading work order data.';
+                }
+            } else {
+                document.getElementById('loading').textContent = 'No work order data provided.';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+version: '3.8'
+services:
+  db:
+    image: mysql:8.0
+    restart: always
+    container_name: palmexitgarage-db
+    environment:
+      MYSQL_ROOT_PASSWORD: example
+      MYSQL_DATABASE: car_repair
+    ports:
+      - "3308:3306"
+    volumes:
+      - car-repair-app_db_data:/var/lib/mysql
+
+volumes:
+  car-repair-app_db_data:
+    external: true
