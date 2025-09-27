@@ -1,0 +1,18 @@
+{
+  "name": "palmexitgarage-installer",
+  "version": "1.0.0",
+  "description": "Portable installer package for PalmExitGarage Auto Repair Shop System",
+  "scripts": {
+    "install-all": "cd ../server && npm install && cd ../frontend && npm install",
+    "start": "START_PALMEXITGARAGE.bat",
+    "stop": "STOP_PALMEXITGARAGE.bat"
+  },
+  "dependencies": {},
+  "keywords": [
+    "auto-repair",
+    "palmexitgarage",
+    "installer"
+  ],
+  "author": "PalmExitGarage",
+  "license": "MIT"
+}

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getWorkOrderTimestamp } from '../utils/timeSettings.js';
 
 const API_BASE = 'http://localhost:5000/api';
 
@@ -228,13 +229,19 @@ function WorkOrderForm({ customerId, vehicleId, customerData, vehicleData, onWor
           };
         });
 
+      // Get custom timestamp if time settings are configured
+      const timeInfo = getWorkOrderTimestamp();
+      
       const workOrderData = {
         customer_id: workOrder.customer_id,
         vehicle_id: workOrder.vehicle_id,
         parts: partsData,
         labor: laborData,
         tax_rate: workOrder.tax_rate,
-        notes: workOrder.notes
+        notes: workOrder.notes,
+        custom_timestamp: timeInfo.timestamp,
+        timezone_info: timeInfo.timezoneInfo,
+        display_time: timeInfo.displayTime
       };
 
       const response = await fetch(`${API_BASE}/work-orders`, {

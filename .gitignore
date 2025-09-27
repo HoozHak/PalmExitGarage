@@ -1,5 +1,45 @@
+# Dependencies
 node_modules/
 client/node_modules/
+frontend/node_modules/
+server/node_modules/
+
+# Environment files
 .env
+.env.local
+.env.production
+
+# System files
 .DS_Store
+Thumbs.db
+
+# Build outputs
 /dist
+/build
+frontend/dist/
+
+# Deployment packages and installers
+deployment/installers/
+**/node-v*.msi
+**/Docker*.exe
+*_FlashDrive/
+*_FlashDrive
+
+# Database backups (large files)
+deployment/database_backup/*.sql
+
+# Log files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+ehthumbs.db
+Desktop.ini

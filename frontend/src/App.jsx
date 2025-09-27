@@ -18,7 +18,7 @@ function Home(){
     { label: 'Existing Customer', route: '/customer/existing' },
     { label: 'Work Orders', route: '/work-orders' },
     { label: 'Edit Inventory', route: '/inventory/edit' },
-    { label: 'Email Settings', route: '/email-settings' },
+    { label: 'Settings', route: '/settings' },
   ];
 
   return (
@@ -126,7 +126,7 @@ export default function App(){
       <Route path="/customer/add-vehicle" element={<AddVehicleForCustomer />} />
       <Route path="/work-orders" element={<WorkOrderManagement />} />
       <Route path="/inventory/edit" element={<InventoryManagerEnhanced />} />
-      <Route path="/email-settings" element={<EmailSettings />} />
+      <Route path="/settings" element={<EmailSettings />} />
     </Routes>
   );
 }

@@ -86,8 +86,8 @@ const createTables = () => {
     const workOrdersTable = `
         CREATE TABLE IF NOT EXISTS work_orders (
             work_order_id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-            customer_id BIGINT UNSIGNED NOT NULL,
-            vehicle_id BIGINT UNSIGNED NOT NULL,
+            customer_id INT NOT NULL,
+            vehicle_id INT NOT NULL,
             status ENUM('estimate', 'approved', 'in_progress', 'completed', 'cancelled') DEFAULT 'estimate',
             subtotal_cents INT NOT NULL DEFAULT 0,
             tax_cents INT NOT NULL DEFAULT 0,
@@ -106,7 +106,7 @@ const createTables = () => {
         CREATE TABLE IF NOT EXISTS work_order_parts (
             id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
             work_order_id BIGINT UNSIGNED NOT NULL,
-            part_id BIGINT UNSIGNED NOT NULL,
+            part_id INT NOT NULL,
             quantity INT NOT NULL DEFAULT 1,
             cost_cents INT NOT NULL,
             FOREIGN KEY (work_order_id) REFERENCES work_orders(work_order_id) ON DELETE CASCADE,
@@ -119,7 +119,7 @@ const createTables = () => {
         CREATE TABLE IF NOT EXISTS work_order_labor (
             id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
             work_order_id BIGINT UNSIGNED NOT NULL,
-            labor_id BIGINT UNSIGNED NOT NULL,
+            labor_id INT NOT NULL,
             quantity DECIMAL(4, 2) NOT NULL DEFAULT 1,
             cost_cents INT NOT NULL,
             FOREIGN KEY (work_order_id) REFERENCES work_orders(work_order_id) ON DELETE CASCADE,

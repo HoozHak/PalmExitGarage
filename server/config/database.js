@@ -6,7 +6,7 @@ module.exports = {
     port: 3308,
     user: 'root',
     password: 'example',
-    database: 'car_repair',
+    database: 'palmexitgarage',
     
     // Connection options
     connectTimeout: 60000,

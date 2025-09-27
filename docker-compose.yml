@@ -6,12 +6,12 @@ services:
     container_name: palmexitgarage-db
     environment:
       MYSQL_ROOT_PASSWORD: example
-      MYSQL_DATABASE: car_repair
+      MYSQL_DATABASE: palmexitgarage
     ports:
       - "3308:3306"
     volumes:
-      - car-repair-app_db_data:/var/lib/mysql
+      - palmexitgarage_db_data:/var/lib/mysql
 
 volumes:
-  car-repair-app_db_data:
+  palmexitgarage_db_data:
     external: true
