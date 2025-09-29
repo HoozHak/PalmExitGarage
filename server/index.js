@@ -159,7 +159,12 @@ app.post('/api/vehicles', (req, res) => {
 // ===== PARTS =====
 // Get all parts
 app.get('/api/parts', (req, res) => {
-    const query = 'SELECT * FROM parts ORDER BY category, brand, item';
+    const query = `
+        SELECT *,
+               CASE WHEN quantity_on_hand > 0 THEN true ELSE false END as in_stock
+        FROM parts 
+        ORDER BY category, brand, item
+    `;
     db.query(query, (err, results) => {
         if (err) {
             console.error(err);

@@ -213,7 +213,9 @@ function WorkOrderForm({ customerId, vehicleId, customerData, vehicleData, onWor
           return {
             part_id: p.part_id,
             quantity: parseInt(p.quantity),
-            cost_cents: part.cost_cents
+            cost_cents: part.cost_cents,
+            brand: part.brand,
+            item: part.item
           };
         });
 
@@ -225,107 +227,71 @@ function WorkOrderForm({ customerId, vehicleId, customerData, vehicleData, onWor
           return {
             labor_id: l.labor_id,
             quantity: parseFloat(l.quantity),
-            cost_cents: laborItem.labor_cost_cents
+            cost_cents: laborItem.labor_cost_cents,
+            labor_name: laborItem.labor_name
           };
         });
 
+      // Calculate totals
+      const totalsData = calculateTotals();
+      
       // Get custom timestamp if time settings are configured
       const timeInfo = getWorkOrderTimestamp();
       
-      const workOrderData = {
-        customer_id: workOrder.customer_id,
-        vehicle_id: workOrder.vehicle_id,
-        parts: partsData,
-        labor: laborData,
-        tax_rate: workOrder.tax_rate,
-        notes: workOrder.notes,
-        custom_timestamp: timeInfo.timestamp,
-        timezone_info: timeInfo.timezoneInfo,
-        display_time: timeInfo.displayTime
-      };
-
-      const response = await fetch(`${API_BASE}/work-orders`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      // Prepare data for signature window (NO work order ID yet)
+      const signatureData = {
+        workOrderData: {
+          work_order_id: null, // Will be set after signature
+          customer_id: workOrder.customer_id,
+          vehicle_id: workOrder.vehicle_id,
+          parts: partsData,
+          labor: laborData,
+          tax_rate: workOrder.tax_rate,
+          notes: workOrder.notes,
+          custom_timestamp: timeInfo.timestamp,
+          timezone_info: timeInfo.timezoneInfo,
+          display_time: timeInfo.displayTime,
+          subtotal_cents: totalsData.subtotal,
+          tax_cents: totalsData.tax,
+          total_cents: totalsData.total
         },
-        body: JSON.stringify(workOrderData),
-      });
+        customerData: customerData || {
+          customer_id: workOrder.customer_id,
+          first_name: 'Customer',
+          last_name: '',
+          phone: '',
+          email: ''
+        },
+        vehicleData: vehicleData || (workOrder.vehicle_id ? {
+          vehicle_id: workOrder.vehicle_id,
+          year: '',
+          make: '',
+          model: ''
+        } : null)
+      };
+      
+      // Open signature window FIRST (before creating work order)
+      openSignatureWindow(signatureData);
+      
+      // Reset form after signature window opens
+      setSelectedParts([{ part_id: '', quantity: 1 }]);
+      setSelectedLabor([{ labor_id: '', quantity: 1 }]);
+      setWorkOrder(prev => ({ ...prev, notes: '' }));
+      setErrors({});
 
-      if (response.ok) {
-        const result = await response.json();
-        
-        // Prepare data for signature window
-        const signatureData = {
-          workOrderData: {
-            work_order_id: result.work_order_id,
-            subtotal_cents: result.subtotal_cents || totals.subtotal,
-            tax_cents: result.tax_cents || totals.tax,
-            total_cents: result.total_cents || totals.total,
-            parts: partsData.map(p => {
-              const part = getPartById(p.part_id);
-              return {
-                ...p,
-                brand: part.brand,
-                item: part.item
-              };
-            }),
-            labor: laborData.map(l => {
-              const laborItem = getLaborById(l.labor_id);
-              return {
-                ...l,
-                labor_name: laborItem.labor_name
-              };
-            }),
-            notes: workOrder.notes
-          },
-          customerData: customerData || {
-            customer_id: workOrder.customer_id,
-            first_name: 'Customer',
-            last_name: '',
-            phone: '',
-            email: ''
-          },
-          vehicleData: vehicleData || (workOrder.vehicle_id ? {
-            vehicle_id: workOrder.vehicle_id,
-            year: '',
-            make: '',
-            model: ''
-          } : null)
-        };
-        
-        // Open signature window
-        openSignatureWindow(signatureData);
-        
-        // Reset form
-        setSelectedParts([{ part_id: '', quantity: 1 }]);
-        setSelectedLabor([{ labor_id: '', quantity: 1 }]);
-        setWorkOrder(prev => ({ ...prev, notes: '' }));
-        setErrors({});
-
-        if (onWorkOrderCreated) {
-          onWorkOrderCreated(result);
-        }
-      } else {
-        const error = await response.json();
-        alert('Error creating work order: ' + error.message);
-      }
     } catch (error) {
       console.error('Error:', error);
-      alert('Network error: Could not connect to server');
+      alert('Error preparing work order: ' + error.message);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const openSignatureWindow = (signatureData) => {
-    // Show user message about signature window
-    alert(`Work order created successfully! Work Order ID: ${signatureData.workOrderData.work_order_id}\n\nA signature window will now open for customer approval.\nTotal: ${formatCurrency(signatureData.workOrderData.total_cents)}`);
-    
     // Encode signature data for URL parameter
     const encodedData = encodeURIComponent(JSON.stringify(signatureData));
     
-    // Open the standalone signature page
+    // Open the standalone signature page immediately (no delay to avoid popup blocker)
     const signatureWindow = window.open(
       `/work-order-signature.html?data=${encodedData}`,
       'WorkOrderSignature',

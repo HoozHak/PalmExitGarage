@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Signature Debug</title>
+</head>
+<body>
+    <h1>Signature Window Debug</h1>
+    <div id="debug-output"></div>
+    <script>
+        window.addEventListener('load', function() {
+            const debugDiv = document.getElementById('debug-output');
+            
+            // Debug URL parsing
+            debugDiv.innerHTML += '<h3>URL Debug:</h3>';
+            debugDiv.innerHTML += '<p><strong>Full URL:</strong> ' + window.location.href + '</p>';
+            debugDiv.innerHTML += '<p><strong>Search params:</strong> ' + window.location.search + '</p>';
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            const dataParam = urlParams.get('data');
+            
+            debugDiv.innerHTML += '<p><strong>Data param exists:</strong> ' + (dataParam ? 'YES' : 'NO') + '</p>';
+            
+            if (dataParam) {
+                debugDiv.innerHTML += '<p><strong>Raw data param (first 200 chars):</strong> ' + dataParam.substring(0, 200) + '...</p>';
+                
+                try {
+                    const decodedData = decodeURIComponent(dataParam);
+                    debugDiv.innerHTML += '<p><strong>Decoded data (first 200 chars):</strong> ' + decodedData.substring(0, 200) + '...</p>';
+                    
+                    const parsedData = JSON.parse(decodedData);
+                    debugDiv.innerHTML += '<h3>Parsed Data Structure:</h3>';
+                    debugDiv.innerHTML += '<pre>' + JSON.stringify(parsedData, null, 2) + '</pre>';
+                    
+                } catch (error) {
+                    debugDiv.innerHTML += '<p style="color: red;"><strong>Parse Error:</strong> ' + error.message + '</p>';
+                    console.error('Parse error:', error);
+                }
+            }
+        });
+    </script>
+</body>
+</html>

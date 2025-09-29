@@ -507,7 +507,7 @@
             }
 
             submitBtn.disabled = true;
-            submitBtn.textContent = '⏳ Submitting...';
+            submitBtn.textContent = '⏳ Creating Work Order...';
 
             try {
                 let signatureDataURL;
@@ -523,35 +523,57 @@
                     signatureType = 'typed';
                 }
                 
-                const response = await fetch(`http://localhost:5000/api/work-orders/${signatureData.workOrderData.work_order_id}/signature`, {
-                    method: 'PUT',
+                // FIRST: Create the work order with signature data
+                const workOrderPayload = {
+                    customer_id: signatureData.workOrderData.customer_id,
+                    vehicle_id: signatureData.workOrderData.vehicle_id,
+                    parts: signatureData.workOrderData.parts.map(p => ({
+                        part_id: p.part_id,
+                        quantity: p.quantity,
+                        cost_cents: p.cost_cents
+                    })),
+                    labor: signatureData.workOrderData.labor.map(l => ({
+                        labor_id: l.labor_id,
+                        quantity: l.quantity,
+                        cost_cents: l.cost_cents
+                    })),
+                    tax_rate: signatureData.workOrderData.tax_rate,
+                    notes: signatureData.workOrderData.notes,
+                    custom_timestamp: signatureData.workOrderData.custom_timestamp,
+                    timezone_info: signatureData.workOrderData.timezone_info,
+                    display_time: signatureData.workOrderData.display_time,
+                    // Include signature data in work order creation
+                    signature_data: signatureDataURL,
+                    customer_signature_name: nameInput.value.trim(),
+                    signature_type: signatureType,
+                    status: 'approved',
+                    signed_date: new Date().toISOString()
+                };
+                
+                const response = await fetch('http://localhost:5000/api/work-orders', {
+                    method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({
-                        signature_data: signatureDataURL,
-                        customer_signature_name: nameInput.value.trim(),
-                        signature_type: signatureType,
-                        status: 'approved',
-                        signed_date: new Date().toISOString()
-                    }),
+                    body: JSON.stringify(workOrderPayload),
                 });
 
                 if (response.ok) {
+                    const result = await response.json();
                     const successMessage = signatureType === 'typed' 
-                        ? 'Work order electronically signed successfully! Your typed signature has been recorded and you will receive a copy for your records.'
-                        : 'Work order signed successfully! You will receive a copy for your records.';
+                        ? `Work order #${result.work_order_id} created and electronically signed successfully! Your typed signature has been recorded and you will receive a copy for your records.`
+                        : `Work order #${result.work_order_id} created and signed successfully! You will receive a copy for your records.`;
                     alert(successMessage);
                     window.close();
                 } else {
                     const error = await response.json();
-                    alert('Error saving signature: ' + error.message);
+                    alert('Error creating work order: ' + error.message);
                     submitBtn.disabled = false;
                     submitBtn.textContent = '✅ Submit Signed Work Order';
                 }
             } catch (error) {
                 console.error('Error:', error);
-                alert('Network error: Could not save signature');
+                alert('Network error: Could not create work order');
                 submitBtn.disabled = false;
                 submitBtn.textContent = '✅ Submit Signed Work Order';
             }
@@ -564,8 +586,8 @@
         function loadWorkOrderData(data) {
             signatureData = data;
             
-            // Populate work order details
-            document.getElementById('work-order-id').textContent = data.workOrderData.work_order_id;
+            // Populate work order details (no ID until after signature)
+            document.getElementById('work-order-id').textContent = data.workOrderData.work_order_id || 'PENDING SIGNATURE';
             document.getElementById('customer-name').textContent = `${data.customerData.first_name} ${data.customerData.last_name}`;
             document.getElementById('customer-phone').textContent = data.customerData.phone || 'Not provided';
             document.getElementById('customer-email').textContent = data.customerData.email || 'Not provided';
@@ -642,16 +664,40 @@
             const urlParams = new URLSearchParams(window.location.search);
             const dataParam = urlParams.get('data');
             
+            console.log('Full URL:', window.location.href);
+            console.log('Search params:', window.location.search);
+            console.log('Data param exists:', dataParam ? 'YES' : 'NO');
+            
             if (dataParam) {
+                console.log('Raw data param (first 200 chars):', dataParam.substring(0, 200));
                 try {
-                    const data = JSON.parse(decodeURIComponent(dataParam));
+                    const decodedData = decodeURIComponent(dataParam);
+                    console.log('Decoded data (first 200 chars):', decodedData.substring(0, 200));
+                    
+                    const data = JSON.parse(decodedData);
+                    console.log('Successfully parsed data:', data);
                     loadWorkOrderData(data);
                 } catch (error) {
                     console.error('Error parsing data:', error);
-                    document.getElementById('loading').textContent = 'Error loading work order data.';
+                    console.error('Raw dataParam:', dataParam);
+                    document.getElementById('loading').innerHTML = `
+                        <div style="color: red; text-align: left;">
+                            <h3>Error loading work order data</h3>
+                            <p><strong>Error:</strong> ${error.message}</p>
+                            <p><strong>URL:</strong> ${window.location.href}</p>
+                            <p><strong>Data param exists:</strong> ${dataParam ? 'YES' : 'NO'}</p>
+                            ${dataParam ? `<p><strong>Data (first 200 chars):</strong> ${dataParam.substring(0, 200)}...</p>` : ''}
+                        </div>
+                    `;
                 }
             } else {
-                document.getElementById('loading').textContent = 'No work order data provided.';
+                document.getElementById('loading').innerHTML = `
+                    <div style="color: orange; text-align: left;">
+                        <h3>No work order data provided</h3>
+                        <p><strong>Full URL:</strong> ${window.location.href}</p>
+                        <p><strong>Search params:</strong> ${window.location.search}</p>
+                    </div>
+                `;
             }
         });
     </script>
