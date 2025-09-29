@@ -2,25 +2,21 @@
 
 **A complete, portable auto repair shop management system with comprehensive vehicle database, professional parts catalog, and automated workflow.**
 
-[![Professional Grade](https://img.shields.io/badge/Grade-Professional-blue.svg)]()
-[![Database](https://img.shields.io/badge/Database-6,057_Vehicles-green.svg)]()
-[![Parts](https://img.shields.io/badge/Parts-88_AutoZone-orange.svg)]()
-[![Portable](https://img.shields.io/badge/Installation-Portable-purple.svg)]()
 
 ---
 
-## **Key Highlights**
+## Key Features
 
-- **Ready-to-Deploy**: Portable installation runs on any Windows machine
-- **Complete Database**: 6,057 vehicles (2010-2025) + 88 professional parts
-- **Professional Grade**: AutoZone business pricing, Honda Crosstour included
-- **One-Click Install**: Automated installer handles Node.js, Docker, everything
-- **Email Automation**: Automatic customer notifications when work is complete
-- **Modern Interface**: React-based responsive design
+- Portable installation runs on any Windows machine
+- Complete database: 6,057 vehicles (2010-2025) and 88 professional parts
+- AutoZone business pricing with Honda Crosstour coverage
+- Automated installer handles Node.js, Docker, and all dependencies
+- Automatic customer email notifications
+- Modern React-based web interface
 
 ---
 
-## **Quick Start - For End Users**
+## Quick Start
 
 ### Option 1: Portable Installation (Recommended)
 1. Copy the `PalmExitGarage` folder to your computer
@@ -47,11 +43,11 @@ cd ../server && npm start
 cd ../frontend && npm run dev
 ```
 
-**Access the application at:** http://localhost:3000
+**Access the application at:** http://localhost:5174
 
 ---
 
-## **System Architecture**
+## System Architecture
 
 ### Technology Stack
 - **Frontend**: React 18 + Vite + Modern CSS
@@ -71,44 +67,52 @@ cd ../frontend && npm run dev
 
 ---
 
-## **Professional Features**
+## Professional Features
 
-### **Customer & Vehicle Management**
-- **Complete CRUD Operations**: Add, view, edit, and delete customers
-- **Cascade Deletion**: Removing customers automatically deletes associated vehicles and work orders
-- **Advanced Search**: Find customers by name, phone, email, or ID
-- **Vehicle Integration**: Comprehensive make/model/year lookup from 6,000+ database
-- **Service History**: Complete tracking of customer relationship and work history
-- **Data Integrity**: Confirmation prompts prevent accidental data loss
+### Customer & Vehicle Management
+- Complete CRUD operations: Add, view, edit, and delete customers
+- Cascade deletion: Removing customers automatically deletes associated vehicles and work orders
+- Advanced search: Find customers by name, phone, email, or ID
+- Vehicle integration: Comprehensive make/model/year lookup from 6,000+ database
+- Service history: Complete tracking of customer relationship and work history
+- Data integrity: Confirmation prompts prevent accidental data loss
 
-### **Work Orders & Estimates**
+### Work Orders & Estimates
 - Professional work order creation with parts and labor
 - Status workflow: `Estimate → Approved → Started → Complete`
 - Digital signature capture (drawn or typed)
 - Automatic tax calculations and professional receipts
 - Print and email functionality
 
-### **Inventory & Parts Management**
-- **88 Professional Parts** with AutoZone business pricing
+### Inventory & Parts Management
+- 88 professional parts with AutoZone business pricing
 - Real-time inventory tracking and stock management
-- **11 Categories**: Engine, Brakes, Suspension, Electrical, Fluids, etc.
-- **Quality Brands**: ACDelco, Bosch, Wagner, Monroe, Mobil 1, Interstate
+- 11 categories: Engine, Brakes, Suspension, Electrical, Fluids, etc.
+- Quality brands: ACDelco, Bosch, Wagner, Monroe, Mobil 1, Interstate
+- Database management: Professional database administration with selective deletion capabilities
 
-### **Email Automation**
-- **Automatic notifications** when work orders are completed
+### Email Automation
+- Automatic notifications when work orders are completed
 - Professional HTML email templates with shop branding
 - Gmail SMTP integration with App Password support
 - Receipt generation and delivery
 
-### **Comprehensive Vehicle Database**
-- **6,057 vehicle combinations** covering 2010-2025
-- **27 major brands**: Honda, Toyota, Ford, Chevrolet, BMW, Mercedes-Benz, Audi, and more
-- **Honda Crosstour**: Complete coverage (2010-2015) including EX, EX-L, EX-L V6
+### Database Management
+- Professional database administration with secure deletion controls
+- Selective database deletion - Choose specific tables to clear (Customers, Vehicles, Parts, etc.)
+- Dual-confirmation safety - Multiple confirmation prompts prevent accidental data loss
+- Smart relationship handling - Respects foreign key constraints and dependent data
+- Complete database status - Real-time record counts and system overview
+
+### Comprehensive Vehicle Database
+- 6,057 vehicle combinations covering 2010-2025
+- 27 major brands: Honda, Toyota, Ford, Chevrolet, BMW, Mercedes-Benz, Audi, and more
+- Honda Crosstour: Complete coverage (2010-2015) including EX, EX-L, EX-L V6
 - Accurate production year tracking and discontinued model handling
 
 ---
 
-## **Target Users**
+## Target Users
 
 - **Small to medium auto repair shops**
 - **Independent mechanics**
@@ -118,7 +122,7 @@ cd ../frontend && npm run dev
 
 ---
 
-## **Usage Workflow**
+## Usage Workflow
 
 ### Customer & Work Order Management
 1. **Customer Operations**: Add, edit, search, or delete customers with full data validation
@@ -136,7 +140,7 @@ cd ../frontend && npm run dev
 
 ---
 
-## **Project Structure**
+## Project Structure
 
 ```
 PalmExitGarage/
@@ -166,7 +170,7 @@ PalmExitGarage/
 
 ---
 
-## **Configuration**
+## Configuration
 
 ### Database Settings
 - **Database**: `palmexitgarage` 
@@ -175,7 +179,7 @@ PalmExitGarage/
 - **Port**: 3308 (external) → 3306 (internal)
 
 ### Application Ports
-- **Frontend**: http://localhost:3000
+- **Frontend**: http://localhost:5174
 - **Backend API**: http://localhost:5000
 - **Database**: localhost:3308
 
@@ -187,7 +191,7 @@ PalmExitGarage/
 
 ---
 
-## **Deployment Options**
+## Deployment Options
 
 ### 1. Portable Installation (End Users)
 - Complete Windows installer with all dependencies
@@ -208,25 +212,25 @@ PalmExitGarage/
 
 ---
 
-## **Security & Data Safety Features**
+## Security & Data Safety Features
 
 ### Security
-- **SQL Injection Prevention** with parameterized queries
-- **Input Validation** and sanitization on all forms
-- **Secure Email Configuration** with Gmail App Password support
-- **CORS Protection** for API endpoints
-- **Environment Variables** for sensitive data protection
+- SQL injection prevention with parameterized queries
+- Input validation and sanitization on all forms
+- Secure email configuration with Gmail App Password support
+- CORS protection for API endpoints
+- Environment variables for sensitive data protection
 
 ### Data Safety
-- **Cascade Deletion Protection** - Smart deletion of related records
-- **Confirmation Prompts** - Users must type "DELETE" to confirm customer removal
-- **Data Integrity** - Foreign key constraints prevent orphaned records
-- **Audit Logging** - Server logs all customer deletion activities
-- **Backup Integration** - Database export includes all professional data
+- Cascade deletion protection - Smart deletion of related records
+- Confirmation prompts - Users must type "DELETE" to confirm customer removal
+- Data integrity - Foreign key constraints prevent orphaned records
+- Audit logging - Server logs all customer deletion activities
+- Backup integration - Database export includes all professional data
 
 ---
 
-## **Support & Documentation**
+## Support & Documentation
 
 ### Installation Support
 - See `deployment/README.md` for detailed installation instructions
@@ -241,14 +245,14 @@ PalmExitGarage/
 
 ---
 
-## **What Makes This Special**
+## What Makes This Special
 
-1. **Complete Solution**: Not just a framework - a complete, working auto repair system
-2. **Professional Data**: Real AutoZone pricing, comprehensive vehicle database
-3. **Truly Portable**: One installer handles everything from Node.js to final setup
-4. **Industry Ready**: Built for real auto repair shops with realistic data
-5. **Modern Stack**: Latest technologies with professional development practices
-6. **Business Automation**: Automatic customer communications and workflow
+1. Complete Solution: Not just a framework - a complete, working auto repair system
+2. Professional Data: Real AutoZone pricing, comprehensive vehicle database
+3. Truly Portable: One installer handles everything from Node.js to final setup
+4. Industry Ready: Built for real auto repair shops with realistic data
+5. Modern Stack: Latest technologies with professional development practices
+6. Business Automation: Automatic customer communications and workflow
 
 ---
 
@@ -262,6 +266,6 @@ You are free to use, modify, and distribute this project, but **please give prop
 
 ---
 
-**Ready to streamline your auto repair business? Get started with the portable installer!**
+Ready to streamline your auto repair business? Get started with the portable installer.
 
-**© 2025 PalmExitGarage - Professional Auto Repair Shop Management System**
+© 2025 PalmExitGarage - Professional Auto Repair Shop Management System

@@ -57,14 +57,14 @@ timeout /t 5 /nobreak >nul
 :: Open browser
 echo Opening PalmExitGarage in your default browser...
 timeout /t 3 /nobreak >nul
-start http://localhost:3000
+start http://localhost:5174
 
 echo.
 echo ================================================================
 echo    PalmExitGarage is now running!
 echo ================================================================
 echo.
-echo Frontend: http://localhost:3000
+echo Frontend: http://localhost:5174
 echo Backend:  http://localhost:5000
 echo.
 echo To stop PalmExitGarage, close this window or run STOP_PALMEXITGARAGE.bat

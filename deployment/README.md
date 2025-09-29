@@ -6,7 +6,7 @@ This is a complete, portable installation package for PalmExitGarage that can be
 
 ---
 
-## 🚀 Quick Start (For End Users)
+## Quick Start
 
 ### Option 1: One-Click Installation
 1. **Right-click** on `INSTALL_PALMEXITGARAGE.bat`
@@ -22,7 +22,7 @@ If you encounter any issues with the automatic installer:
 
 ---
 
-## 📋 System Requirements
+## System Requirements
 
 - **Operating System**: Windows 10 or Windows 11
 - **RAM**: Minimum 4GB (8GB recommended)
@@ -32,26 +32,27 @@ If you encounter any issues with the automatic installer:
 
 ---
 
-## 📦 What's Included
+## What's Included
 
 This installation package contains:
 
 ### Applications & Dependencies
-- ✅ **PalmExitGarage Frontend** (React-based web interface)
-- ✅ **PalmExitGarage Backend** (Node.js/Express server)
-- ✅ **MySQL Database** (Running in Docker container)
-- ✅ **Automatic installers** for Node.js and Docker Desktop
+- PalmExitGarage Frontend (React-based web interface)
+- PalmExitGarage Backend (Node.js/Express server)
+- MySQL Database (Running in Docker container)
+- Database Management System (Professional administration tools)
+- Automatic installers for Node.js and Docker Desktop
 
 ### Database Content
-- ✅ **6,057 Vehicle Models** (2010-2025, all major manufacturers)
-- ✅ **88 Professional Parts** (AutoZone business pricing)
-- ✅ **Sample Customer Data** (4 customers, 5 vehicles)
-- ✅ **Labor Operations Catalog** (10 common services)
-- ✅ **Honda Crosstour Models** (2010-2015, all variants)
+- 6,057 Vehicle Models (2010-2025, all major manufacturers)
+- 88 Professional Parts (AutoZone business pricing)
+- Sample Customer Data (4 customers, 5 vehicles)
+- Labor Operations Catalog (10 common services)
+- Honda Crosstour Models (2010-2015, all variants)
 
 ---
 
-## 🛠️ Installation Process
+## Installation Process
 
 The installer will automatically:
 
@@ -65,7 +66,7 @@ The installer will automatically:
 
 ---
 
-## 🖥️ Using PalmExitGarage
+## Using PalmExitGarage
 
 ### Starting the Application
 - **Desktop**: Double-click "Start PalmExitGarage" shortcut
@@ -78,12 +79,12 @@ The installer will automatically:
 
 ### Accessing the Application
 Once started, PalmExitGarage will be available at:
-- **Web Interface**: http://localhost:3000
+- **Web Interface**: http://localhost:5174
 - **API Server**: http://localhost:5000
 
 ---
 
-## 💾 Database Information
+## Database Information
 
 ### Complete Vehicle Database
 - **Years Covered**: 2010-2025
@@ -105,7 +106,7 @@ Once started, PalmExitGarage will be available at:
 
 ---
 
-## 🔧 Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 
@@ -125,7 +126,7 @@ Once started, PalmExitGarage will be available at:
 - Restart Docker Desktop if needed
 
 **"Port already in use"**
-- Default ports: 3000 (frontend), 5000 (backend), 3308 (database)
+- Default ports: 5174 (frontend), 5000 (backend), 3308 (database)
 - Stop other applications using these ports
 - Or modify ports in configuration files
 
@@ -138,7 +139,7 @@ Once started, PalmExitGarage will be available at:
 
 ---
 
-## 📁 File Structure
+## File Structure
 
 ```
 PalmExitGarage/
@@ -156,19 +157,19 @@ PalmExitGarage/
 
 ---
 
-## 🚀 Production Deployment
+## Production Deployment
 
 This package is designed for:
-- ✅ **Small to medium auto repair shops**
-- ✅ **Single-location businesses**
-- ✅ **Local network deployment**
-- ✅ **Development and testing environments**
+- Small to medium auto repair shops
+- Single-location businesses
+- Local network deployment
+- Development and testing environments
 
 For multi-location or cloud deployment, additional configuration may be required.
 
 ---
 
-## 📞 Support
+## Support
 
 For technical support or questions about PalmExitGarage:
 - Check the troubleshooting section above
@@ -177,7 +178,7 @@ For technical support or questions about PalmExitGarage:
 
 ---
 
-## 🔐 Security Notes
+## Security Notes
 
 - Default database credentials are included (development use)
 - Change default passwords for production use
@@ -186,4 +187,4 @@ For technical support or questions about PalmExitGarage:
 
 ---
 
-**© 2025 PalmExitGarage - Professional Auto Repair Shop Management System**
+© 2025 PalmExitGarage - Professional Auto Repair Shop Management System

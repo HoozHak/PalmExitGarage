@@ -121,13 +121,14 @@ echo   * 88+ Professional Parts (AutoZone business pricing)
 echo   * Honda Crosstour included (2010-2015, all variants)
 echo   * Complete work order and customer management system
 echo   * Professional email automation
+echo   * Database management and administration tools
 echo.
 echo To start PalmExitGarage:
 echo   - Double-click the "Start PalmExitGarage" desktop shortcut
 echo   - OR run: START_PALMEXITGARAGE.bat
 echo.
 echo The application will be available at:
-echo   http://localhost:3000
+echo   http://localhost:5174
 echo.
 echo Thank you for choosing PalmExitGarage Professional!
 echo.

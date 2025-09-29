@@ -1,7 +1,8 @@
 {
-  "name": "frontend",
+  "name": "palmexitgarage-frontend",
+  "description": "Professional Auto Repair Shop Management System - Frontend with Database Management",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "license": "MIT",
   "author": "Coty O'Dea (GitHub: HoozHak)",

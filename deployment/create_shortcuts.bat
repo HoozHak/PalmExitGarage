@@ -17,7 +17,7 @@ powershell "$WshShell = New-Object -comObject WScript.Shell; $Shortcut = $WshShe
 
 powershell "$WshShell = New-Object -comObject WScript.Shell; $Shortcut = $WshShell.CreateShortcut('%STARTMENU%\PalmExitGarage\Stop PalmExitGarage.lnk'); $Shortcut.TargetPath = '%INSTALL_DIR%STOP_PALMEXITGARAGE.bat'; $Shortcut.WorkingDirectory = '%INSTALL_DIR%'; $Shortcut.Description = 'Stop PalmExitGarage Auto Repair System'; $Shortcut.Save()"
 
-powershell "$WshShell = New-Object -comObject WScript.Shell; $Shortcut = $WshShell.CreateShortcut('%STARTMENU%\PalmExitGarage\Open PalmExitGarage.lnk'); $Shortcut.TargetPath = 'http://localhost:3000'; $Shortcut.Description = 'Open PalmExitGarage in Browser'; $Shortcut.Save()"
+powershell "$WshShell = New-Object -comObject WScript.Shell; $Shortcut = $WshShell.CreateShortcut('%STARTMENU%\PalmExitGarage\Open PalmExitGarage.lnk'); $Shortcut.TargetPath = 'http://localhost:5174'; $Shortcut.Description = 'Open PalmExitGarage in Browser'; $Shortcut.Save()"
 
 echo Shortcuts created successfully!
 exit /b 0
