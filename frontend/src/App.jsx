@@ -8,6 +8,7 @@ import ExistingCustomer from './components/ExistingCustomer.jsx';
 import InventoryManagerEnhanced from './components/InventoryManagerEnhanced.jsx';
 import WorkOrderManagement from './pages/WorkOrderManagement.jsx';
 import EmailSettings from './components/EmailSettings.jsx';
+import Reports from './components/Reports.jsx';
 
 function Home(){
   const navigate = useNavigate();
@@ -18,6 +19,7 @@ function Home(){
     { label: 'Existing Customer', route: '/customer/existing' },
     { label: 'Work Orders', route: '/work-orders' },
     { label: 'Edit Inventory', route: '/inventory/edit' },
+    { label: '📊 Create Report', route: '/reports' },
     { label: 'Settings', route: '/settings' },
   ];
 
@@ -126,6 +128,7 @@ export default function App(){
       <Route path="/customer/add-vehicle" element={<AddVehicleForCustomer />} />
       <Route path="/work-orders" element={<WorkOrderManagement />} />
       <Route path="/inventory/edit" element={<InventoryManagerEnhanced />} />
+      <Route path="/reports" element={<Reports />} />
       <Route path="/settings" element={<EmailSettings />} />
     </Routes>
   );

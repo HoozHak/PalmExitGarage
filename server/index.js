@@ -719,7 +719,288 @@ app.get('/api/customers/:id/history', (req, res) => {
     });
 });
 
-// ===== WORK ORDERS / ESTIMATES =====
+// ===== REPORTS =====
+// Generate business reports
+app.post('/api/reports/generate', async (req, res) => {
+    const { startDate, endDate, reportTypes } = req.body;
+    
+    try {
+        const reports = {};
+        
+        // Parts Profit Report
+        if (reportTypes.partsProfit) {
+            const partsQuery = `
+                SELECT 
+                    p.brand,
+                    p.item,
+                    p.part_number,
+                    SUM(wop.quantity) as quantity,
+                    SUM(wop.cost_cents * wop.quantity) as total_revenue,
+                    SUM(COALESCE(p.cost_paid_cents, p.cost_cents) * wop.quantity) as total_cost,
+                    SUM((wop.cost_cents - COALESCE(p.cost_paid_cents, p.cost_cents)) * wop.quantity) as profit
+                FROM work_order_parts wop
+                JOIN parts p ON wop.part_id = p.part_id
+                JOIN work_orders wo ON wop.work_order_id = wo.work_order_id
+                WHERE wo.created_at >= ? AND wo.created_at <= ? 
+                  AND wo.status = 'approved'
+                GROUP BY p.part_id, p.brand, p.item, p.part_number
+                ORDER BY profit DESC
+            `;
+            
+            const partsResults = await new Promise((resolve, reject) => {
+                db.query(partsQuery, [startDate, endDate + ' 23:59:59'], (err, results) => {
+                    if (err) reject(err);
+                    else resolve(results);
+                });
+            });
+            
+            const partsSummary = partsResults.reduce((acc, item) => ({
+                total_quantity: acc.total_quantity + item.quantity,
+                total_revenue: acc.total_revenue + item.total_revenue,
+                total_cost: acc.total_cost + item.total_cost,
+                total_profit: acc.total_profit + item.profit
+            }), { total_quantity: 0, total_revenue: 0, total_cost: 0, total_profit: 0 });
+            
+            reports.partsReport = {
+                items: partsResults,
+                summary: partsSummary
+            };
+        }
+        
+        // Labor Profit Report
+        if (reportTypes.laborProfit) {
+            const laborQuery = `
+                SELECT 
+                    l.labor_name,
+                    l.category,
+                    SUM(wol.quantity) as total_hours,
+                    SUM(wol.cost_cents * wol.quantity) as total_revenue
+                FROM work_order_labor wol
+                JOIN labor l ON wol.labor_id = l.labor_id
+                JOIN work_orders wo ON wol.work_order_id = wo.work_order_id
+                WHERE wo.created_at >= ? AND wo.created_at <= ?
+                  AND wo.status = 'approved'
+                GROUP BY l.labor_id, l.labor_name, l.category
+                ORDER BY total_revenue DESC
+            `;
+            
+            const laborResults = await new Promise((resolve, reject) => {
+                db.query(laborQuery, [startDate, endDate + ' 23:59:59'], (err, results) => {
+                    if (err) reject(err);
+                    else resolve(results);
+                });
+            });
+            
+            const laborSummary = laborResults.reduce((acc, item) => ({
+                total_hours: acc.total_hours + parseFloat(item.total_hours),
+                total_revenue: acc.total_revenue + item.total_revenue
+            }), { total_hours: 0, total_revenue: 0 });
+            
+            reports.laborReport = {
+                items: laborResults,
+                summary: laborSummary
+            };
+        }
+        
+        // California Tax Information Report
+        if (reportTypes.caTaxInfo) {
+            const taxQuery = `
+                SELECT 
+                    COUNT(*) as transaction_count,
+                    SUM(subtotal_cents) as total_taxable_sales,
+                    SUM(tax_cents) as total_tax_collected,
+                    AVG(tax_rate) as average_tax_rate
+                FROM work_orders
+                WHERE created_at >= ? AND created_at <= ?
+                  AND status = 'approved'
+            `;
+            
+            const taxResults = await new Promise((resolve, reject) => {
+                db.query(taxQuery, [startDate, endDate + ' 23:59:59'], (err, results) => {
+                    if (err) reject(err);
+                    else resolve(results[0]);
+                });
+            });
+            
+            reports.taxReport = taxResults;
+        }
+        
+        res.json(reports);
+    } catch (error) {
+        console.error('Error generating reports:', error);
+        res.status(500).json({ error: 'Failed to generate reports', message: error.message });
+    }
+});
+
+// Email report
+app.post('/api/reports/email', async (req, res) => {
+    const { reportData, emailAddress, startDate, endDate } = req.body;
+    
+    try {
+        // Generate HTML email content
+        const emailHTML = generateReportEmailHTML(reportData, startDate, endDate);
+        const subject = `Palm Exit Garage - Business Report (${formatDate(startDate)} - ${formatDate(endDate)})`;
+        
+        // Use the existing email service
+        const emailService = require('./services/emailService');
+        
+        await emailService.sendEmail({
+            to: emailAddress,
+            subject: subject,
+            html: emailHTML
+        });
+        
+        res.json({ message: 'Report emailed successfully' });
+    } catch (error) {
+        console.error('Error emailing report:', error);
+        res.status(500).json({ error: 'Failed to email report', message: error.message });
+    }
+});
+
+function formatDate(dateString) {
+    return new Date(dateString).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+}
+
+function formatCurrency(cents) {
+    return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD'
+    }).format(cents / 100);
+}
+
+function generateReportEmailHTML(data, startDate, endDate) {
+    return `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>Palm Exit Garage - Business Report</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 0; padding: 40px; line-height: 1.6; background-color: #f5f5f5; }
+                .container { max-width: 800px; margin: 0 auto; background-color: white; padding: 40px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+                .header { text-align: center; border-bottom: 3px solid #FFD329; padding-bottom: 20px; margin-bottom: 30px; }
+                .header h1 { color: #000; margin: 0; font-size: 28px; }
+                .section { margin-bottom: 30px; }
+                .section h3 { color: #000; border-bottom: 2px solid #FFD329; padding-bottom: 10px; }
+                table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+                th, td { padding: 12px 8px; text-align: left; border-bottom: 1px solid #ddd; }
+                th { background-color: #FFD329; color: #000; font-weight: bold; }
+                .total-row { font-weight: bold; background-color: #f5f5f5; }
+                .date-range { text-align: center; margin-bottom: 30px; font-size: 18px; background-color: #f8f8f8; padding: 15px; border-radius: 5px; }
+                .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #666; border-top: 1px solid #ddd; padding-top: 15px; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>🏁 PALM EXIT GARAGE</h1>
+                    <p>Professional Auto Repair Services</p>
+                    <p>Business Report</p>
+                </div>
+                
+                <div class="date-range">
+                    <strong>Report Period: ${formatDate(startDate)} - ${formatDate(endDate)}</strong>
+                </div>
+                
+                ${data.partsReport ? `
+                <div class="section">
+                    <h3>Parts Profit Report</h3>
+                    <table>
+                        <tr>
+                            <th>Part</th>
+                            <th>Quantity Sold</th>
+                            <th>Total Revenue</th>
+                            <th>Total Cost</th>
+                            <th>Profit</th>
+                        </tr>
+                        ${data.partsReport.items.map(item => `
+                        <tr>
+                            <td>${item.brand} - ${item.item}</td>
+                            <td>${item.quantity}</td>
+                            <td>${formatCurrency(item.total_revenue)}</td>
+                            <td>${formatCurrency(item.total_cost)}</td>
+                            <td>${formatCurrency(item.profit)}</td>
+                        </tr>
+                        `).join('')}
+                        <tr class="total-row">
+                            <td><strong>TOTALS</strong></td>
+                            <td><strong>${data.partsReport.summary.total_quantity}</strong></td>
+                            <td><strong>${formatCurrency(data.partsReport.summary.total_revenue)}</strong></td>
+                            <td><strong>${formatCurrency(data.partsReport.summary.total_cost)}</strong></td>
+                            <td><strong>${formatCurrency(data.partsReport.summary.total_profit)}</strong></td>
+                        </tr>
+                    </table>
+                </div>
+                ` : ''}
+                
+                ${data.laborReport ? `
+                <div class="section">
+                    <h3>Labor Report</h3>
+                    <table>
+                        <tr>
+                            <th>Labor Type</th>
+                            <th>Total Hours</th>
+                            <th>Total Revenue</th>
+                        </tr>
+                        ${data.laborReport.items.map(item => `
+                        <tr>
+                            <td>${item.labor_name}</td>
+                            <td>${parseFloat(item.total_hours).toFixed(2)}</td>
+                            <td>${formatCurrency(item.total_revenue)}</td>
+                        </tr>
+                        `).join('')}
+                        <tr class="total-row">
+                            <td><strong>TOTALS</strong></td>
+                            <td><strong>${data.laborReport.summary.total_hours.toFixed(2)}</strong></td>
+                            <td><strong>${formatCurrency(data.laborReport.summary.total_revenue)}</strong></td>
+                        </tr>
+                    </table>
+                </div>
+                ` : ''}
+                
+                ${data.taxReport ? `
+                <div class="section">
+                    <h3>California Tax Information Report</h3>
+                    <table>
+                        <tr>
+                            <th>Description</th>
+                            <th>Amount</th>
+                        </tr>
+                        <tr>
+                            <td>Total Taxable Sales</td>
+                            <td>${formatCurrency(data.taxReport.total_taxable_sales || 0)}</td>
+                        </tr>
+                        <tr>
+                            <td>Total Tax Collected</td>
+                            <td>${formatCurrency(data.taxReport.total_tax_collected || 0)}</td>
+                        </tr>
+                        <tr>
+                            <td>Average Tax Rate</td>
+                            <td>${((data.taxReport.average_tax_rate || 0) * 100).toFixed(4)}%</td>
+                        </tr>
+                        <tr>
+                            <td>Number of Transactions</td>
+                            <td>${data.taxReport.transaction_count || 0}</td>
+                        </tr>
+                    </table>
+                </div>
+                ` : ''}
+                
+                <div class="footer">
+                    <p>Generated on ${new Date().toLocaleDateString('en-US')} - Palm Exit Garage Business Report</p>
+                    <p>This report contains confidential business information.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+    `;
+}
+
+// ===== WORK ORDERS =====
 // Get all work orders
 app.get('/api/work-orders', (req, res) => {
     const query = `
