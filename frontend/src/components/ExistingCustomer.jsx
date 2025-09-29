@@ -220,7 +220,7 @@ function ExistingCustomer() {
   };
 
   const handleWorkOrderCreated = (workOrderResult) => {
-    alert(`Work order created successfully!\nWork Order ID: ${workOrderResult.work_order_id}`);
+    // Work order was successfully created and signed
     setShowWorkOrderForm(false);
     setSelectedVehicle(null);
     // Refresh customer history to show new work order

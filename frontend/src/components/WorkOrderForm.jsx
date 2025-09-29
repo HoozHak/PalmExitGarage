@@ -38,6 +38,21 @@ function WorkOrderForm({ customerId, vehicleId, customerData, vehicleData, onWor
       vehicle_id: vehicleId || ''
     }));
   }, [customerId, vehicleId]);
+  
+  // Listen for messages from signature window
+  useEffect(() => {
+    const handleMessage = (event) => {
+      if (event.data.type === 'WORK_ORDER_COMPLETED' && event.data.success) {
+        // Work order was successfully created and signed
+        if (onWorkOrderCreated) {
+          onWorkOrderCreated({ work_order_id: event.data.workOrderId });
+        }
+      }
+    };
+    
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [onWorkOrderCreated]);
 
   const loadParts = async () => {
     try {

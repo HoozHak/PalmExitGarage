@@ -564,6 +564,16 @@
                         ? `Work order #${result.work_order_id} created and electronically signed successfully! Your typed signature has been recorded and you will receive a copy for your records.`
                         : `Work order #${result.work_order_id} created and signed successfully! You will receive a copy for your records.`;
                     alert(successMessage);
+                    
+                    // Notify parent window that work order was created successfully
+                    if (window.opener) {
+                        window.opener.postMessage({
+                            type: 'WORK_ORDER_COMPLETED',
+                            workOrderId: result.work_order_id,
+                            success: true
+                        }, '*');
+                    }
+                    
                     window.close();
                 } else {
                     const error = await response.json();
