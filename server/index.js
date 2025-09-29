@@ -177,10 +177,39 @@ app.get('/api/parts', (req, res) => {
 
 // Add new part
 app.post('/api/parts', (req, res) => {
-    const { brand, item, part_number, cost_cents, category, description, in_stock } = req.body;
-    const query = 'INSERT INTO parts (brand, item, part_number, cost_cents, category, description, in_stock) VALUES (?, ?, ?, ?, ?, ?, ?)';
+    const { 
+        brand, 
+        item, 
+        part_number, 
+        cost_paid_cents,    // wholesale cost
+        cost_charged_cents, // retail cost
+        cost_cents,         // legacy field for backward compatibility
+        category, 
+        description, 
+        quantity_on_hand 
+    } = req.body;
     
-    db.query(query, [brand, item, part_number, cost_cents, category, description, in_stock || true], (err, result) => {
+    // Calculate profit
+    const wholesaleCost = cost_paid_cents || cost_cents || 0;
+    const retailCost = cost_charged_cents || cost_cents || 0;
+    const profit = retailCost - wholesaleCost;
+    
+    const query = `INSERT INTO parts 
+        (brand, item, part_number, cost_paid_cents, cost_charged_cents, cost_cents, profit_cents, category, description, quantity_on_hand) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    
+    db.query(query, [
+        brand, 
+        item, 
+        part_number, 
+        wholesaleCost,
+        retailCost,
+        retailCost,    // keep cost_cents as retail for compatibility
+        profit,
+        category, 
+        description, 
+        quantity_on_hand || 0
+    ], (err, result) => {
         if (err) {
             console.error(err);
             res.status(500).json({ error: 'Database error' });
@@ -192,10 +221,42 @@ app.post('/api/parts', (req, res) => {
 
 // Update part
 app.put('/api/parts/:id', (req, res) => {
-    const { brand, item, part_number, cost_cents, category, description, in_stock } = req.body;
-    const query = 'UPDATE parts SET brand = ?, item = ?, part_number = ?, cost_cents = ?, category = ?, description = ?, in_stock = ? WHERE part_id = ?';
+    const { 
+        brand, 
+        item, 
+        part_number, 
+        cost_paid_cents,    // wholesale cost
+        cost_charged_cents, // retail cost
+        cost_cents,         // legacy field for backward compatibility
+        category, 
+        description, 
+        quantity_on_hand 
+    } = req.body;
     
-    db.query(query, [brand, item, part_number, cost_cents, category, description, in_stock, req.params.id], (err, result) => {
+    // Calculate profit
+    const wholesaleCost = cost_paid_cents || cost_cents || 0;
+    const retailCost = cost_charged_cents || cost_cents || 0;
+    const profit = retailCost - wholesaleCost;
+    
+    const query = `UPDATE parts SET 
+        brand = ?, item = ?, part_number = ?, 
+        cost_paid_cents = ?, cost_charged_cents = ?, cost_cents = ?, profit_cents = ?,
+        category = ?, description = ?, quantity_on_hand = ? 
+        WHERE part_id = ?`;
+    
+    db.query(query, [
+        brand, 
+        item, 
+        part_number, 
+        wholesaleCost,
+        retailCost,
+        retailCost,    // keep cost_cents as retail for compatibility
+        profit,
+        category, 
+        description, 
+        quantity_on_hand || 0,
+        req.params.id
+    ], (err, result) => {
         if (err) {
             console.error(err);
             res.status(500).json({ error: 'Database error' });

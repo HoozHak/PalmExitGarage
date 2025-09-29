@@ -12,10 +12,11 @@ function PartsManagerEnhanced() {
     brand: '',
     item: '',
     part_number: '',
-    cost_cents: '',
+    cost_paid_cents: '',      // wholesale cost
+    cost_charged_cents: '',   // retail cost
     category: '',
     description: '',
-    in_stock: true
+    quantity_on_hand: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -57,7 +58,9 @@ function PartsManagerEnhanced() {
     try {
       const data = {
         ...formData,
-        cost_cents: Math.round(parseFloat(formData.cost_cents || '0') * 100)
+        cost_paid_cents: Math.round(parseFloat(formData.cost_paid_cents || '0') * 100),
+        cost_charged_cents: Math.round(parseFloat(formData.cost_charged_cents || '0') * 100),
+        quantity_on_hand: parseInt(formData.quantity_on_hand || '0')
       };
 
       const url = editingPart ? `${API_BASE}/parts/${editingPart.part_id}` : `${API_BASE}/parts`;
@@ -91,11 +94,12 @@ function PartsManagerEnhanced() {
     setFormData({
       brand: part.brand,
       item: part.item,
-      part_number: part.part_number,
-      cost_cents: (part.cost_cents / 100).toFixed(2),
-      category: part.category,
+      part_number: part.part_number || '',
+      cost_paid_cents: ((part.cost_paid_cents || part.cost_cents || 0) / 100).toFixed(2),
+      cost_charged_cents: ((part.cost_charged_cents || part.cost_cents || 0) / 100).toFixed(2),
+      category: part.category || '',
       description: part.description || '',
-      in_stock: part.in_stock
+      quantity_on_hand: part.quantity_on_hand || '0'
     });
     setShowForm(true);
   };
@@ -130,10 +134,11 @@ function PartsManagerEnhanced() {
       brand: '',
       item: '',
       part_number: '',
-      cost_cents: '',
+      cost_paid_cents: '',      // wholesale cost
+      cost_charged_cents: '',   // retail cost
       category: '',
       description: '',
-      in_stock: true
+      quantity_on_hand: ''
     });
   };
 
@@ -143,6 +148,13 @@ function PartsManagerEnhanced() {
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
+  };
+  
+  // Calculate profit for display in form
+  const calculateProfit = () => {
+    const wholesale = parseFloat(formData.cost_paid_cents || '0');
+    const retail = parseFloat(formData.cost_charged_cents || '0');
+    return retail - wholesale;
   };
 
   const formatCurrency = (cents) => {
@@ -286,16 +298,17 @@ function PartsManagerEnhanced() {
               
               <div>
                 <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
-                  Cost (USD) *
+                  💰 Wholesale Cost (What You Pay) *
                 </label>
                 <input
                   type="number"
-                  name="cost_cents"
-                  value={formData.cost_cents}
+                  name="cost_paid_cents"
+                  value={formData.cost_paid_cents}
                   onChange={handleChange}
                   step="0.01"
                   min="0"
                   required
+                  placeholder="0.00"
                   style={{
                     width: '100%',
                     padding: '10px',
@@ -306,6 +319,50 @@ function PartsManagerEnhanced() {
                     fontSize: '14px'
                   }}
                 />
+              </div>
+              
+              <div>
+                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                  💵 Retail Cost (Customer Price) *
+                </label>
+                <input
+                  type="number"
+                  name="cost_charged_cents"
+                  value={formData.cost_charged_cents}
+                  onChange={handleChange}
+                  step="0.01"
+                  min="0"
+                  required
+                  placeholder="0.00"
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    borderRadius: '5px',
+                    border: '1px solid #666',
+                    backgroundColor: '#333',
+                    color: '#FFD329',
+                    fontSize: '14px'
+                  }}
+                />
+              </div>
+              
+              <div>
+                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#FFD329' }}>
+                  💰 Profit Per Unit
+                </label>
+                <div style={{
+                  width: '100%',
+                  padding: '10px',
+                  borderRadius: '5px',
+                  border: '2px solid #FFD329',
+                  backgroundColor: '#222',
+                  color: '#FFD329',
+                  fontSize: '16px',
+                  fontWeight: 'bold',
+                  textAlign: 'center'
+                }}>
+                  {formatCurrency(Math.round(calculateProfit() * 100))}
+                </div>
               </div>
               
               <div>
@@ -329,17 +386,28 @@ function PartsManagerEnhanced() {
                 />
               </div>
               
-              <div style={{ display: 'flex', alignItems: 'center', marginTop: '20px' }}>
-                <label style={{ display: 'flex', alignItems: 'center', fontWeight: 'bold' }}>
-                  <input
-                    type="checkbox"
-                    name="in_stock"
-                    checked={formData.in_stock}
-                    onChange={handleChange}
-                    style={{ marginRight: '8px' }}
-                  />
-                  In Stock
+              <div>
+                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                  📦 Quantity in Stock
                 </label>
+                <input
+                  type="number"
+                  name="quantity_on_hand"
+                  value={formData.quantity_on_hand}
+                  onChange={handleChange}
+                  min="0"
+                  step="1"
+                  placeholder="0"
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    borderRadius: '5px',
+                    border: '1px solid #666',
+                    backgroundColor: '#333',
+                    color: '#FFD329',
+                    fontSize: '14px'
+                  }}
+                />
               </div>
             </div>
             
@@ -410,7 +478,7 @@ function PartsManagerEnhanced() {
       }}>
         <div style={{
           display: 'grid',
-          gridTemplateColumns: '2fr 1fr 1fr 1fr 100px 100px',
+          gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 1fr 100px 100px',
           gap: '1px',
           backgroundColor: '#666'
         }}>
@@ -425,7 +493,13 @@ function PartsManagerEnhanced() {
             Category
           </div>
           <div style={{ backgroundColor: '#FFD329', color: 'black', padding: '12px', fontWeight: 'bold' }}>
-            Cost
+            Wholesale
+          </div>
+          <div style={{ backgroundColor: '#FFD329', color: 'black', padding: '12px', fontWeight: 'bold' }}>
+            Retail
+          </div>
+          <div style={{ backgroundColor: '#FFD329', color: 'black', padding: '12px', fontWeight: 'bold' }}>
+            Profit
           </div>
           <div style={{ backgroundColor: '#FFD329', color: 'black', padding: '12px', fontWeight: 'bold' }}>
             Stock
@@ -451,15 +525,21 @@ function PartsManagerEnhanced() {
               <div style={{ backgroundColor: '#444', padding: '12px' }}>
                 {part.category || 'N/A'}
               </div>
-              <div style={{ backgroundColor: '#444', padding: '12px', fontWeight: 'bold' }}>
-                {formatCurrency(part.cost_cents)}
+              <div style={{ backgroundColor: '#444', padding: '12px', color: '#FF9800' }}>
+                {formatCurrency(part.cost_paid_cents || part.cost_cents || 0)}
+              </div>
+              <div style={{ backgroundColor: '#444', padding: '12px', color: '#4CAF50', fontWeight: 'bold' }}>
+                {formatCurrency(part.cost_charged_cents || part.cost_cents || 0)}
+              </div>
+              <div style={{ backgroundColor: '#444', padding: '12px', color: '#FFD329', fontWeight: 'bold' }}>
+                {formatCurrency((part.cost_charged_cents || part.cost_cents || 0) - (part.cost_paid_cents || part.cost_cents || 0))}
               </div>
               <div style={{ backgroundColor: '#444', padding: '12px' }}>
                 <span style={{
-                  color: part.in_stock ? '#4CAF50' : '#f44336',
+                  color: (part.quantity_on_hand > 0) ? '#4CAF50' : '#f44336',
                   fontWeight: 'bold'
                 }}>
-                  {part.in_stock ? '✓' : '✗'}
+                  {part.quantity_on_hand || 0}
                 </span>
               </div>
               <div style={{ backgroundColor: '#444', padding: '8px', display: 'flex', gap: '5px' }}>

@@ -19,20 +19,22 @@ function InventoryManagerEnhanced() {
     brand: '',
     item: '',
     part_number: '',
-    cost_cents: '',
+    cost_paid_cents: '',
+    cost_charged_cents: '',
     category: '',
     description: '',
-    in_stock: true
+    quantity_on_hand: ''
   });
   const [editingPart, setEditingPart] = useState(null);
   const [editedPart, setEditedPart] = useState({
     brand: '',
     item: '',
     part_number: '',
-    cost_cents: '',
+    cost_paid_cents: '',
+    cost_charged_cents: '',
     category: '',
     description: '',
-    in_stock: true
+    quantity_on_hand: ''
   });
 
   // Labor state
@@ -122,7 +124,9 @@ function InventoryManagerEnhanced() {
         },
         body: JSON.stringify({
           ...newPart,
-          cost_cents: Math.round(parseFloat(newPart.cost_cents || '0') * 100)
+          cost_paid_cents: Math.round(parseFloat(newPart.cost_paid_cents || '0') * 100),
+          cost_charged_cents: Math.round(parseFloat(newPart.cost_charged_cents || '0') * 100),
+          quantity_on_hand: parseInt(newPart.quantity_on_hand || '0')
         }),
       });
 
@@ -134,10 +138,11 @@ function InventoryManagerEnhanced() {
           brand: '',
           item: '',
           part_number: '',
-          cost_cents: '',
+          cost_paid_cents: '',
+          cost_charged_cents: '',
           category: '',
           description: '',
-          in_stock: true
+          quantity_on_hand: ''
         });
         loadParts();
       } else {
@@ -158,10 +163,11 @@ function InventoryManagerEnhanced() {
       brand: part.brand,
       item: part.item,
       part_number: part.part_number || '',
-      cost_cents: (part.cost_cents / 100).toString(),
+      cost_paid_cents: ((part.cost_paid_cents || part.cost_cents || 0) / 100).toString(),
+      cost_charged_cents: ((part.cost_charged_cents || part.cost_cents || 0) / 100).toString(),
       category: part.category || '',
       description: part.description || '',
-      in_stock: part.in_stock
+      quantity_on_hand: (part.quantity_on_hand || 0).toString()
     });
   };
 
@@ -177,7 +183,9 @@ function InventoryManagerEnhanced() {
         },
         body: JSON.stringify({
           ...editedPart,
-          cost_cents: Math.round(parseFloat(editedPart.cost_cents || '0') * 100)
+          cost_paid_cents: Math.round(parseFloat(editedPart.cost_paid_cents || '0') * 100),
+          cost_charged_cents: Math.round(parseFloat(editedPart.cost_charged_cents || '0') * 100),
+          quantity_on_hand: parseInt(editedPart.quantity_on_hand || '0')
         }),
       });
 
@@ -409,10 +417,11 @@ function InventoryManagerEnhanced() {
       brand: '',
       item: '',
       part_number: '',
-      cost_cents: '',
+      cost_paid_cents: '',
+      cost_charged_cents: '',
       category: '',
       description: '',
-      in_stock: true
+      quantity_on_hand: ''
     });
     setEditedLabor({
       labor_name: '',
@@ -589,7 +598,7 @@ function InventoryManagerEnhanced() {
 
                     <div style={{
                       display: 'grid',
-                      gridTemplateColumns: '1fr 1fr 1fr',
+                      gridTemplateColumns: '1fr 1fr',
                       gap: '20px',
                       marginBottom: '20px'
                     }}>
@@ -612,31 +621,6 @@ function InventoryManagerEnhanced() {
                             fontSize: '16px'
                           }}
                           placeholder="Manufacturer part number"
-                        />
-                      </div>
-
-                      <div>
-                        <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
-                          Cost *
-                        </label>
-                        <input
-                          type="number"
-                          name="cost_cents"
-                          value={newPart.cost_cents}
-                          onChange={handlePartChange}
-                          required
-                          min="0"
-                          step="0.01"
-                          style={{
-                            width: '100%',
-                            padding: '12px',
-                            borderRadius: '5px',
-                            border: '1px solid #666',
-                            backgroundColor: '#444',
-                            color: '#FFD329',
-                            fontSize: '16px'
-                          }}
-                          placeholder="0.00"
                         />
                       </div>
 
@@ -666,6 +650,106 @@ function InventoryManagerEnhanced() {
                       </div>
                     </div>
 
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 1fr 1fr 1fr',
+                      gap: '20px',
+                      marginBottom: '20px'
+                    }}>
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#FF9800' }}>
+                          💰 Wholesale Cost (You Pay) *
+                        </label>
+                        <input
+                          type="number"
+                          name="cost_paid_cents"
+                          value={newPart.cost_paid_cents}
+                          onChange={handlePartChange}
+                          required
+                          min="0"
+                          step="0.01"
+                          style={{
+                            width: '100%',
+                            padding: '12px',
+                            borderRadius: '5px',
+                            border: '2px solid #FF9800',
+                            backgroundColor: '#444',
+                            color: '#FFD329',
+                            fontSize: '16px'
+                          }}
+                          placeholder="0.00"
+                        />
+                      </div>
+
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#4CAF50' }}>
+                          💵 Retail Cost (Customer Pays) *
+                        </label>
+                        <input
+                          type="number"
+                          name="cost_charged_cents"
+                          value={newPart.cost_charged_cents}
+                          onChange={handlePartChange}
+                          required
+                          min="0"
+                          step="0.01"
+                          style={{
+                            width: '100%',
+                            padding: '12px',
+                            borderRadius: '5px',
+                            border: '2px solid #4CAF50',
+                            backgroundColor: '#444',
+                            color: '#FFD329',
+                            fontSize: '16px'
+                          }}
+                          placeholder="0.00"
+                        />
+                      </div>
+
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#FFD329' }}>
+                          💰 Profit Per Unit
+                        </label>
+                        <div style={{
+                          width: '100%',
+                          padding: '12px',
+                          borderRadius: '5px',
+                          border: '2px solid #FFD329',
+                          backgroundColor: '#222',
+                          color: '#FFD329',
+                          fontSize: '16px',
+                          fontWeight: 'bold',
+                          textAlign: 'center'
+                        }}>
+                          {formatCurrency(Math.round((parseFloat(newPart.cost_charged_cents || '0') - parseFloat(newPart.cost_paid_cents || '0')) * 100))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                          📦 Quantity in Stock
+                        </label>
+                        <input
+                          type="number"
+                          name="quantity_on_hand"
+                          value={newPart.quantity_on_hand}
+                          onChange={handlePartChange}
+                          min="0"
+                          step="1"
+                          style={{
+                            width: '100%',
+                            padding: '12px',
+                            borderRadius: '5px',
+                            border: '1px solid #666',
+                            backgroundColor: '#444',
+                            color: '#FFD329',
+                            fontSize: '16px'
+                          }}
+                          placeholder="0"
+                        />
+                      </div>
+                    </div>
+
                     <div style={{ marginBottom: '20px' }}>
                       <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
                         Description
@@ -689,18 +773,6 @@ function InventoryManagerEnhanced() {
                       />
                     </div>
 
-                    <div style={{ marginBottom: '20px' }}>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '10px', fontWeight: 'bold' }}>
-                        <input
-                          type="checkbox"
-                          name="in_stock"
-                          checked={newPart.in_stock}
-                          onChange={handlePartChange}
-                          style={{ transform: 'scale(1.2)' }}
-                        />
-                        In Stock
-                      </label>
-                    </div>
 
                     <div style={{ display: 'flex', gap: '15px' }}>
                       <button
@@ -793,7 +865,7 @@ function InventoryManagerEnhanced() {
 
                     <div style={{
                       display: 'grid',
-                      gridTemplateColumns: '1fr 1fr 1fr',
+                      gridTemplateColumns: '1fr 1fr',
                       gap: '20px',
                       marginBottom: '20px'
                     }}>
@@ -816,31 +888,6 @@ function InventoryManagerEnhanced() {
                             fontSize: '16px'
                           }}
                           placeholder="Manufacturer part number"
-                        />
-                      </div>
-
-                      <div>
-                        <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
-                          Cost *
-                        </label>
-                        <input
-                          type="number"
-                          name="cost_cents"
-                          value={editedPart.cost_cents}
-                          onChange={handlePartEditChange}
-                          required
-                          min="0"
-                          step="0.01"
-                          style={{
-                            width: '100%',
-                            padding: '12px',
-                            borderRadius: '5px',
-                            border: '1px solid #666',
-                            backgroundColor: '#444',
-                            color: '#FFD329',
-                            fontSize: '16px'
-                          }}
-                          placeholder="0.00"
                         />
                       </div>
 
@@ -870,6 +917,106 @@ function InventoryManagerEnhanced() {
                       </div>
                     </div>
 
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 1fr 1fr 1fr',
+                      gap: '20px',
+                      marginBottom: '20px'
+                    }}>
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#FF9800' }}>
+                          💰 Wholesale Cost (You Pay) *
+                        </label>
+                        <input
+                          type="number"
+                          name="cost_paid_cents"
+                          value={editedPart.cost_paid_cents}
+                          onChange={handlePartEditChange}
+                          required
+                          min="0"
+                          step="0.01"
+                          style={{
+                            width: '100%',
+                            padding: '12px',
+                            borderRadius: '5px',
+                            border: '2px solid #FF9800',
+                            backgroundColor: '#444',
+                            color: '#FFD329',
+                            fontSize: '16px'
+                          }}
+                          placeholder="0.00"
+                        />
+                      </div>
+
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#4CAF50' }}>
+                          💵 Retail Cost (Customer Pays) *
+                        </label>
+                        <input
+                          type="number"
+                          name="cost_charged_cents"
+                          value={editedPart.cost_charged_cents}
+                          onChange={handlePartEditChange}
+                          required
+                          min="0"
+                          step="0.01"
+                          style={{
+                            width: '100%',
+                            padding: '12px',
+                            borderRadius: '5px',
+                            border: '2px solid #4CAF50',
+                            backgroundColor: '#444',
+                            color: '#FFD329',
+                            fontSize: '16px'
+                          }}
+                          placeholder="0.00"
+                        />
+                      </div>
+
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#FFD329' }}>
+                          💰 Profit Per Unit
+                        </label>
+                        <div style={{
+                          width: '100%',
+                          padding: '12px',
+                          borderRadius: '5px',
+                          border: '2px solid #FFD329',
+                          backgroundColor: '#222',
+                          color: '#FFD329',
+                          fontSize: '16px',
+                          fontWeight: 'bold',
+                          textAlign: 'center'
+                        }}>
+                          {formatCurrency(Math.round((parseFloat(editedPart.cost_charged_cents || '0') - parseFloat(editedPart.cost_paid_cents || '0')) * 100))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                          📦 Quantity in Stock
+                        </label>
+                        <input
+                          type="number"
+                          name="quantity_on_hand"
+                          value={editedPart.quantity_on_hand}
+                          onChange={handlePartEditChange}
+                          min="0"
+                          step="1"
+                          style={{
+                            width: '100%',
+                            padding: '12px',
+                            borderRadius: '5px',
+                            border: '1px solid #666',
+                            backgroundColor: '#444',
+                            color: '#FFD329',
+                            fontSize: '16px'
+                          }}
+                          placeholder="0"
+                        />
+                      </div>
+                    </div>
+
                     <div style={{ marginBottom: '20px' }}>
                       <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
                         Description
@@ -893,18 +1040,6 @@ function InventoryManagerEnhanced() {
                       />
                     </div>
 
-                    <div style={{ marginBottom: '20px' }}>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '10px', fontWeight: 'bold' }}>
-                        <input
-                          type="checkbox"
-                          name="in_stock"
-                          checked={editedPart.in_stock}
-                          onChange={handlePartEditChange}
-                          style={{ transform: 'scale(1.2)' }}
-                        />
-                        In Stock
-                      </label>
-                    </div>
 
                     <div style={{ display: 'flex', gap: '15px' }}>
                       <button
@@ -1007,7 +1142,7 @@ function InventoryManagerEnhanced() {
                     {/* Header */}
                     <div style={{
                       display: 'grid',
-                      gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 80px',
+                      gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 1fr 1fr 80px',
                       gap: '15px',
                       padding: '15px',
                       backgroundColor: '#444',
@@ -1020,8 +1155,10 @@ function InventoryManagerEnhanced() {
                       <div>PART DETAILS</div>
                       <div>PART NUMBER</div>
                       <div>CATEGORY</div>
-                      <div>COST</div>
-                      <div>STATUS</div>
+                      <div>WHOLESALE</div>
+                      <div>RETAIL</div>
+                      <div>PROFIT</div>
+                      <div>STOCK</div>
                       <div>ACTIONS</div>
                     </div>
 
@@ -1032,7 +1169,7 @@ function InventoryManagerEnhanced() {
                           key={part.part_id}
                           style={{
                             display: 'grid',
-                            gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 80px',
+                            gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 1fr 1fr 80px',
                             gap: '15px',
                             padding: '15px',
                             backgroundColor: '#444',
@@ -1065,19 +1202,25 @@ function InventoryManagerEnhanced() {
                           <div style={{ color: '#ccc' }}>
                             {part.category || 'Uncategorized'}
                           </div>
+                          <div style={{ fontWeight: 'bold', color: '#FF9800' }}>
+                            {formatCurrency(part.cost_paid_cents || part.cost_cents || 0)}
+                          </div>
+                          <div style={{ fontWeight: 'bold', color: '#4CAF50' }}>
+                            {formatCurrency(part.cost_charged_cents || part.cost_cents || 0)}
+                          </div>
                           <div style={{ fontWeight: 'bold', color: '#FFD329' }}>
-                            {formatCurrency(part.cost_cents)}
+                            {formatCurrency((part.cost_charged_cents || part.cost_cents || 0) - (part.cost_paid_cents || part.cost_cents || 0))}
                           </div>
                           <div>
                             <span style={{
-                              backgroundColor: part.in_stock ? '#4CAF50' : '#f44336',
+                              backgroundColor: (part.quantity_on_hand > 0) ? '#4CAF50' : '#f44336',
                               color: 'white',
                               padding: '4px 8px',
                               borderRadius: '12px',
                               fontSize: '12px',
                               fontWeight: 'bold'
                             }}>
-                              {part.in_stock ? 'IN STOCK' : 'OUT OF STOCK'}
+                              {part.quantity_on_hand || 0} in stock
                             </span>
                           </div>
                           <div>
