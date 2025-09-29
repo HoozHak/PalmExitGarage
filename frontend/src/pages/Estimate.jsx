@@ -23,6 +23,11 @@ export default function Estimate(){
   const [taxRate, setTaxRate] = useState(0.0825) // 8.25% default; adjust for your city
   const [notes, setNotes] = useState('')
   const [saving, setSaving] = useState(false)
+  const [showEstimateModal, setShowEstimateModal] = useState(false)
+  const [createdWorkOrderId, setCreatedWorkOrderId] = useState(null)
+  const [showSignatureModal, setShowSignatureModal] = useState(false)
+  const [signature, setSignature] = useState('')
+  const [signingCustomerName, setSigningCustomerName] = useState('')
 
   // load catalogs
   useEffect(() => {
@@ -136,13 +141,8 @@ export default function Estimate(){
       }
 
       const result = await response.json()
-      alert(`Estimate saved successfully! Work Order ID: ${result.work_order_id}`)
-      
-      // Optionally clear the form after saving
-      const shouldClear = confirm('Estimate saved! Would you like to clear the form for a new estimate?')
-      if (shouldClear) {
-        clearForm()
-      }
+      setCreatedWorkOrderId(result.work_order_id)
+      setShowEstimateModal(true)
     } catch (error) {
       console.error('Error saving estimate:', error)
       alert('Error saving estimate: ' + error.message)
@@ -158,6 +158,63 @@ export default function Estimate(){
     }
     setCustomerId(value)
     setVehicleId('')
+  }
+
+  const handleKeepAsEstimate = () => {
+    setShowEstimateModal(false)
+    alert(`Estimate saved successfully! Work Order ID: ${createdWorkOrderId}`)
+    const shouldClear = confirm('Estimate saved! Would you like to clear the form for a new estimate?')
+    if (shouldClear) {
+      clearForm()
+    }
+  }
+
+  const handleConvertToWorkOrder = () => {
+    setShowEstimateModal(false)
+    // Get customer name for signature
+    const customer = customers.find(c => String(c.customer_id) === String(customerId))
+    if (customer) {
+      setSigningCustomerName(`${customer.first_name} ${customer.last_name}`)
+    } else {
+      setSigningCustomerName('')
+    }
+    setShowSignatureModal(true)
+  }
+
+  const handleSignatureSubmit = async () => {
+    if (!signature.trim() && !signingCustomerName.trim()) {
+      alert('Please provide either a drawn signature or typed name')
+      return
+    }
+
+    try {
+      const response = await fetch(`${API}/work-orders/${createdWorkOrderId}/approve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          signature: signature.trim() || `Typed: ${signingCustomerName.trim()}`,
+          customer_name: signingCustomerName.trim() || 'Customer'
+        })
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to approve work order')
+      }
+
+      setShowSignatureModal(false)
+      alert(`Work Order #${createdWorkOrderId} has been approved and is ready to begin!`)
+      
+      const shouldClear = confirm('Work order approved! Would you like to clear the form for a new estimate?')
+      if (shouldClear) {
+        clearForm()
+        setSignature('')
+        setSigningCustomerName('')
+      }
+    } catch (error) {
+      console.error('Error approving work order:', error)
+      alert('Error approving work order: ' + error.message)
+    }
   }
 
   return (
@@ -176,8 +233,8 @@ export default function Estimate(){
             <label style={{display:'block', marginBottom:'8px', fontWeight:'bold'}}>Customer</label>
             <select value={customerId} onChange={e=>handleCustomerChange(e.target.value)} style={{width:'100%', background:'#111', color:YELLOW, padding:10, borderRadius:8, border:'1px solid #333'}}>
               <option value="">Select customer…</option>
-              <option value="estimate-only" style={{fontStyle:'italic'}}>📋 Estimate Only</option>
-              <option value="new-customer" style={{fontStyle:'italic'}}>➕ Add New Customer</option>
+              <option value="estimate-only" style={{fontStyle:'italic'}}>Estimate Only</option>
+              <option value="new-customer" style={{fontStyle:'italic'}}>Add New Customer</option>
               <option disabled style={{color:'#666'}}>─────────────────</option>
               {customers.map(c => (
                 <option key={c.customer_id} value={c.customer_id}>{c.first_name} {c.last_name}</option>
@@ -273,13 +330,13 @@ export default function Estimate(){
 
       {/* Actions */}
       <div style={{display:'flex', gap:12, flexWrap:'wrap'}}>
-        <button style={BTN} onClick={()=>window.print()}>🖨️ Print</button>
+        <button style={BTN} onClick={()=>window.print()}>Print</button>
         <button 
           style={{...BTN, backgroundColor: saving ? '#666' : '#2a7c2a'}} 
           onClick={saveEstimate}
           disabled={saving}
         >
-          {saving ? '⏳ Saving...' : '💾 Save Estimate'}
+          {saving ? 'Saving...' : 'Save Estimate'}
         </button>
         <button 
           style={{...BTN, backgroundColor:'#c54545'}} 
@@ -288,9 +345,188 @@ export default function Estimate(){
             if (confirmed) clearForm()
           }}
         >
-          🗑️ Clear Form
+          Clear Form
         </button>
       </div>
+      
+      {/* Estimate Decision Modal */}
+      {showEstimateModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            backgroundColor: '#222',
+            border: '2px solid #FFD329',
+            borderRadius: '12px',
+            padding: '30px',
+            maxWidth: '500px',
+            color: '#FFD329'
+          }}>
+            <h2 style={{ marginTop: 0, color: '#FFD329', textAlign: 'center' }}>
+              Estimate Created Successfully!
+            </h2>
+            <p style={{ fontSize: '16px', lineHeight: '1.5', textAlign: 'center' }}>
+              Work Order #{createdWorkOrderId} has been created as an estimate.
+              What would you like to do next?
+            </p>
+            <div style={{
+              display: 'flex',
+              gap: '15px',
+              justifyContent: 'center',
+              marginTop: '25px'
+            }}>
+              <button
+                onClick={handleKeepAsEstimate}
+                style={{
+                  ...BTN,
+                  backgroundColor: '#666',
+                  fontSize: '16px',
+                  padding: '12px 20px'
+                }}
+              >
+                Keep as Estimate
+              </button>
+              <button
+                onClick={handleConvertToWorkOrder}
+                style={{
+                  ...BTN,
+                  backgroundColor: '#2a7c2a',
+                  fontSize: '16px',
+                  padding: '12px 20px'
+                }}
+                disabled={customerId === 'estimate-only'}
+              >
+                {customerId === 'estimate-only' ? 'Requires Customer' : 'Convert to Work Order'}
+              </button>
+            </div>
+            {customerId === 'estimate-only' && (
+              <p style={{
+                fontSize: '12px',
+                color: '#ccc',
+                textAlign: 'center',
+                marginTop: '10px',
+                fontStyle: 'italic'
+              }}>
+                Work orders require a selected customer for signature capture
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Signature Modal */}
+      {showSignatureModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            backgroundColor: '#222',
+            border: '2px solid #FFD329',
+            borderRadius: '12px',
+            padding: '30px',
+            maxWidth: '600px',
+            color: '#FFD329'
+          }}>
+            <h2 style={{ marginTop: 0, color: '#FFD329', textAlign: 'center' }}>
+              Customer Authorization Required
+            </h2>
+            <p style={{ fontSize: '16px', lineHeight: '1.5', textAlign: 'center', marginBottom: '25px' }}>
+              To convert this estimate to an approved work order, we need the customer's authorization.
+            </p>
+            
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+                Customer Name (for signature)
+              </label>
+              <input
+                type="text"
+                value={signingCustomerName}
+                onChange={(e) => setSigningCustomerName(e.target.value)}
+                style={{
+                  width: '100%',
+                  background: '#111',
+                  color: '#FFD329',
+                  padding: '12px',
+                  borderRadius: '8px',
+                  border: '1px solid #333',
+                  fontSize: '16px'
+                }}
+                placeholder="Enter customer's full name"
+              />
+            </div>
+            
+            <div style={{ marginBottom: '25px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+                Digital Signature (Optional - customer can type their name above instead)
+              </label>
+              <textarea
+                value={signature}
+                onChange={(e) => setSignature(e.target.value)}
+                rows={3}
+                style={{
+                  width: '100%',
+                  background: '#111',
+                  color: '#FFD329',
+                  padding: '12px',
+                  borderRadius: '8px',
+                  border: '1px solid #333',
+                  fontSize: '16px',
+                  fontFamily: 'cursive'
+                }}
+                placeholder="Customer can type signature here, or just use name above"
+              />
+            </div>
+            
+            <div style={{
+              display: 'flex',
+              gap: '15px',
+              justifyContent: 'center'
+            }}>
+              <button
+                onClick={() => setShowSignatureModal(false)}
+                style={{
+                  ...BTN,
+                  backgroundColor: '#666',
+                  fontSize: '16px',
+                  padding: '12px 20px'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSignatureSubmit}
+                style={{
+                  ...BTN,
+                  backgroundColor: '#2a7c2a',
+                  fontSize: '16px',
+                  padding: '12px 20px'
+                }}
+              >
+                Approve Work Order
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
       </div>
     </div>
   )
