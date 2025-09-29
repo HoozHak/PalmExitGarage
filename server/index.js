@@ -1000,6 +1000,203 @@ function generateReportEmailHTML(data, startDate, endDate) {
     `;
 }
 
+// ===== TAX SETTINGS =====
+// Get tax settings
+app.get('/api/settings/tax', (req, res) => {
+    const query = 'SELECT * FROM tax_settings WHERE id = 1';
+    db.query(query, (err, results) => {
+        if (err) {
+            console.error('Error fetching tax settings:', err);
+            res.status(500).json({ error: 'Database error' });
+            return;
+        }
+        
+        // Return default if no settings found
+        if (results.length === 0) {
+            res.json({ 
+                tax_rate: 0.0825,  // Default CA tax rate
+                state: 'CA',
+                description: 'California State Tax'
+            });
+        } else {
+            res.json(results[0]);
+        }
+    });
+});
+
+// Update tax settings
+app.put('/api/settings/tax', (req, res) => {
+    const { tax_rate, state, description } = req.body;
+    
+    // Validate tax rate
+    if (tax_rate < 0 || tax_rate > 1) {
+        res.status(400).json({ error: 'Tax rate must be between 0 and 1 (0% to 100%)' });
+        return;
+    }
+    
+    // First check if settings exist
+    const checkQuery = 'SELECT id FROM tax_settings WHERE id = 1';
+    db.query(checkQuery, (err, results) => {
+        if (err) {
+            console.error('Error checking tax settings:', err);
+            res.status(500).json({ error: 'Database error' });
+            return;
+        }
+        
+        let query, values;
+        if (results.length === 0) {
+            // Insert new settings
+            query = 'INSERT INTO tax_settings (id, tax_rate, state, description) VALUES (1, ?, ?, ?)';
+            values = [tax_rate, state, description];
+        } else {
+            // Update existing settings
+            query = 'UPDATE tax_settings SET tax_rate = ?, state = ?, description = ? WHERE id = 1';
+            values = [tax_rate, state, description];
+        }
+        
+        db.query(query, values, (err, result) => {
+            if (err) {
+                console.error('Error saving tax settings:', err);
+                res.status(500).json({ error: 'Database error' });
+                return;
+            }
+            
+            res.json({ 
+                message: 'Tax settings updated successfully',
+                tax_rate,
+                state,
+                description
+            });
+        });
+    });
+});
+
+// ===== DATABASE MANAGEMENT =====
+// Get database table counts
+app.get('/api/database/counts', (req, res) => {
+    const queries = [
+        'SELECT COUNT(*) as count FROM customers',
+        'SELECT COUNT(*) as count FROM vehicles',
+        'SELECT COUNT(*) as count FROM parts',
+        'SELECT COUNT(*) as count FROM labor',
+        'SELECT COUNT(*) as count FROM work_orders',
+        'SELECT COUNT(*) as count FROM tax_settings'
+    ];
+    
+    const results = {};
+    let completed = 0;
+    
+    queries.forEach((query, index) => {
+        const tableName = ['customers', 'vehicles', 'parts', 'labor', 'workOrders', 'taxSettings'][index];
+        
+        db.query(query, (err, result) => {
+            if (err) {
+                console.error(`Error counting ${tableName}:`, err);
+                results[tableName] = 0;
+            } else {
+                results[tableName] = result[0].count;
+            }
+            
+            completed++;
+            if (completed === queries.length) {
+                res.json(results);
+            }
+        });
+    });
+});
+
+// Delete selected database tables
+app.post('/api/database/delete', (req, res) => {
+    const { tables, confirmationKey } = req.body;
+    
+    // Validate confirmation key
+    if (confirmationKey !== 'DELETE_CONFIRMED_TWICE') {
+        res.status(400).json({ error: 'Invalid confirmation key' });
+        return;
+    }
+    
+    // Validate tables array
+    if (!tables || !Array.isArray(tables) || tables.length === 0) {
+        res.status(400).json({ error: 'No tables specified for deletion' });
+        return;
+    }
+    
+    // Map frontend table names to actual database tables
+    const tableMap = {
+        customers: { table: 'customers', description: 'All customer data' },
+        vehicles: { table: 'vehicles', description: 'All vehicle data' },
+        parts: { table: 'parts', description: 'All parts inventory' },
+        labor: { table: 'labor', description: 'All labor pricing' },
+        workOrders: { table: 'work_orders', description: 'All work orders and history' },
+        taxSettings: { table: 'tax_settings', description: 'Tax configuration' }
+    };
+    
+    // Validate table names
+    const validTables = tables.filter(table => tableMap[table]);
+    if (validTables.length !== tables.length) {
+        res.status(400).json({ error: 'Invalid table names provided' });
+        return;
+    }
+    
+    // Order tables for safe deletion (considering foreign key constraints)
+    const orderedDeletion = [];
+    if (validTables.includes('workOrders')) orderedDeletion.push('work_orders');
+    if (validTables.includes('vehicles')) orderedDeletion.push('vehicles');
+    if (validTables.includes('customers')) orderedDeletion.push('customers');
+    if (validTables.includes('parts')) orderedDeletion.push('parts');
+    if (validTables.includes('labor')) orderedDeletion.push('labor');
+    if (validTables.includes('taxSettings')) orderedDeletion.push('tax_settings');
+    
+    const results = {};
+    let completed = 0;
+    let hasError = false;
+    
+    const deleteNextTable = (index) => {
+        if (index >= orderedDeletion.length) {
+            // All deletions completed
+            if (!hasError) {
+                res.json({ 
+                    message: 'Selected database tables cleared successfully',
+                    results: results
+                });
+            }
+            return;
+        }
+        
+        const tableName = orderedDeletion[index];
+        const friendlyName = Object.keys(tableMap).find(key => tableMap[key].table === tableName);
+        
+        db.query(`DELETE FROM ${tableName}`, (err, result) => {
+            if (err) {
+                console.error(`Error clearing ${tableName}:`, err);
+                results[friendlyName] = { success: false, error: err.message };
+                hasError = true;
+                
+                if (!res.headersSent) {
+                    res.status(500).json({ 
+                        error: `Failed to clear ${tableName}`, 
+                        message: err.message,
+                        results: results
+                    });
+                }
+                return;
+            }
+            
+            results[friendlyName] = { 
+                success: true, 
+                rowsDeleted: result.affectedRows,
+                description: tableMap[friendlyName].description
+            };
+            
+            // Move to next table
+            deleteNextTable(index + 1);
+        });
+    };
+    
+    // Start deletion process
+    deleteNextTable(0);
+});
+
 // ===== WORK ORDERS =====
 // Get all work orders
 app.get('/api/work-orders', (req, res) => {
@@ -1699,6 +1896,170 @@ app.get('/api/email/status', async (req, res) => {
         savedShopName: savedConfig?.shopName || null,
         hasStoredPassword: hasPassword,
         needsPassword: savedConfig !== null && !emailService.isConfigured && !hasPassword
+    });
+});
+
+// ===== DATABASE MANAGEMENT =====
+// Get database counts for database management interface
+app.get('/api/database/counts', (req, res) => {
+    const queries = [
+        { key: 'customers', query: 'SELECT COUNT(*) as count FROM customers' },
+        { key: 'vehicles', query: 'SELECT COUNT(*) as count FROM vehicles' },
+        { key: 'parts', query: 'SELECT COUNT(*) as count FROM parts' },
+        { key: 'labor', query: 'SELECT COUNT(*) as count FROM labor' },
+        { key: 'workOrders', query: 'SELECT COUNT(*) as count FROM work_orders' },
+        { key: 'taxSettings', query: 'SELECT COUNT(*) as count FROM tax_settings' }
+    ];
+    
+    const counts = {};
+    let completed = 0;
+    
+    queries.forEach(({ key, query }) => {
+        db.query(query, (err, results) => {
+            if (err) {
+                console.error(`Error counting ${key}:`, err);
+                counts[key] = 0;
+            } else {
+                counts[key] = results[0].count;
+            }
+            
+            completed++;
+            if (completed === queries.length) {
+                res.json(counts);
+            }
+        });
+    });
+});
+
+// Delete selected databases - DANGEROUS OPERATION
+app.post('/api/database/delete', (req, res) => {
+    const { tables, confirmationKey } = req.body;
+    
+    // Security check - require double confirmation
+    if (confirmationKey !== 'DELETE_CONFIRMED_TWICE') {
+        return res.status(400).json({ error: 'Invalid confirmation key' });
+    }
+    
+    if (!tables || !Array.isArray(tables) || tables.length === 0) {
+        return res.status(400).json({ error: 'No tables specified for deletion' });
+    }
+    
+    // Map frontend table names to actual database tables
+    const tableMap = {
+        customers: {
+            tables: ['work_order_parts', 'work_order_labor', 'work_orders', 'vehicles', 'customers'],
+            description: 'Customers and all related data'
+        },
+        vehicles: {
+            tables: ['work_order_parts', 'work_order_labor', 'work_orders', 'vehicles'],
+            description: 'Vehicles and all related work orders'
+        },
+        parts: {
+            tables: ['work_order_parts', 'parts'],
+            description: 'Parts inventory and work order references'
+        },
+        labor: {
+            tables: ['work_order_labor', 'labor'],
+            description: 'Labor items and work order references'
+        },
+        workOrders: {
+            tables: ['work_order_parts', 'work_order_labor', 'work_orders'],
+            description: 'Work orders and all related data'
+        },
+        taxSettings: {
+            tables: ['tax_settings'],
+            description: 'Tax configuration settings'
+        }
+    };
+    
+    const results = {};
+    let completed = 0;
+    let hasError = false;
+    
+    // Process each table group
+    tables.forEach(tableKey => {
+        const tableInfo = tableMap[tableKey];
+        if (!tableInfo) {
+            results[tableKey] = { error: 'Unknown table key', rowsDeleted: 0 };
+            completed++;
+            return;
+        }
+        
+        if (tableInfo.customQuery) {
+            // Handle custom queries (like tax settings)
+            db.query(tableInfo.customQuery, (err, result) => {
+                if (err) {
+                    console.error(`Error deleting ${tableKey}:`, err);
+                    results[tableKey] = { 
+                        error: err.message, 
+                        rowsDeleted: 0,
+                        description: tableInfo.description
+                    };
+                    hasError = true;
+                } else {
+                    results[tableKey] = { 
+                        success: true, 
+                        rowsDeleted: result.affectedRows,
+                        description: tableInfo.description
+                    };
+                }
+                
+                completed++;
+                if (completed === tables.length) {
+                    if (hasError) {
+                        res.status(500).json({ error: 'Some deletions failed', results });
+                    } else {
+                        res.json({ message: 'Database deletion completed', results });
+                    }
+                }
+            });
+        } else {
+            // Handle table deletions (in reverse order to respect foreign keys)
+            let totalRowsDeleted = 0;
+            let tableCompleted = 0;
+            let tableError = false;
+            
+            tableInfo.tables.forEach(tableName => {
+                const deleteQuery = `DELETE FROM ${tableName}`;
+                
+                db.query(deleteQuery, (err, result) => {
+                    if (err) {
+                        console.error(`Error deleting from ${tableName}:`, err);
+                        if (!tableError) {
+                            results[tableKey] = { 
+                                error: `Failed to delete from ${tableName}: ${err.message}`, 
+                                rowsDeleted: totalRowsDeleted,
+                                description: tableInfo.description
+                            };
+                            tableError = true;
+                            hasError = true;
+                        }
+                    } else {
+                        totalRowsDeleted += result.affectedRows;
+                    }
+                    
+                    tableCompleted++;
+                    if (tableCompleted === tableInfo.tables.length) {
+                        if (!tableError) {
+                            results[tableKey] = { 
+                                success: true, 
+                                rowsDeleted: totalRowsDeleted,
+                                description: tableInfo.description
+                            };
+                        }
+                        
+                        completed++;
+                        if (completed === tables.length) {
+                            if (hasError) {
+                                res.status(500).json({ error: 'Some deletions failed', results });
+                            } else {
+                                res.json({ message: 'Database deletion completed', results });
+                            }
+                        }
+                    }
+                });
+            });
+        }
     });
 });
 

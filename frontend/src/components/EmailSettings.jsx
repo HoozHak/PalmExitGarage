@@ -45,9 +45,21 @@ function EmailSettings() {
   const [timeMessage, setTimeMessage] = useState('');
   const [timeError, setTimeError] = useState('');
 
+  // Tax settings state
+  const [taxSettings, setTaxSettings] = useState({
+    tax_rate: 0.0825,
+    state: 'CA',
+    description: 'California State Tax'
+  });
+  const [taxRateInput, setTaxRateInput] = useState('8.2500'); // Separate state for input display
+  const [taxMessage, setTaxMessage] = useState('');
+  const [taxError, setTaxError] = useState('');
+  const [isSavingTax, setIsSavingTax] = useState(false);
+
   useEffect(() => {
     loadEmailStatus();
     loadTimeSettingsData();
+    loadTaxSettings();
     updateDisplayTime();
 
     // Update display time every second
@@ -315,6 +327,94 @@ Type "DELETE" to confirm:`;
     
     setTimeMessage('Reset to system time');
     setTimeError('');
+  };
+
+  // Tax Settings Functions
+  const loadTaxSettings = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/settings/tax`);
+      if (response.ok) {
+        const data = await response.json();
+        setTaxSettings(data);
+        // Update the input display value
+        setTaxRateInput((parseFloat(data.tax_rate || 0) * 100).toFixed(4));
+      }
+    } catch (error) {
+      console.error('Error loading tax settings:', error);
+      setTaxError('Failed to load tax settings');
+    }
+  };
+
+  const handleTaxSettingChange = (field, value) => {
+    if (field === 'tax_rate') {
+      // Handle tax rate input specially
+      setTaxRateInput(value); // Update input display immediately
+      // Convert percentage to decimal for storage
+      const decimalValue = parseFloat(value) / 100;
+      if (!isNaN(decimalValue)) {
+        setTaxSettings(prev => ({
+          ...prev,
+          tax_rate: decimalValue
+        }));
+      }
+    } else {
+      setTaxSettings(prev => ({
+        ...prev,
+        [field]: value
+      }));
+    }
+    // Clear messages when user makes changes
+    setTaxMessage('');
+    setTaxError('');
+  };
+
+  const saveTaxSettings = async () => {
+    // Validate tax rate from input
+    const taxRatePercent = parseFloat(taxRateInput);
+    if (isNaN(taxRatePercent) || taxRatePercent < 0 || taxRatePercent > 100) {
+      setTaxError('Tax rate must be between 0% and 100%');
+      return;
+    }
+    
+    const taxRateDecimal = taxRatePercent / 100;
+
+    if (!taxSettings.state.trim()) {
+      setTaxError('State is required');
+      return;
+    }
+
+    setIsSavingTax(true);
+    setTaxMessage('');
+    setTaxError('');
+
+    try {
+      const response = await fetch(`${API_BASE}/settings/tax`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          tax_rate: taxRateDecimal,
+          state: taxSettings.state.trim(),
+          description: taxSettings.description.trim() || `${taxSettings.state} State Tax`
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setTaxSettings(data);
+        setTaxRateInput((parseFloat(data.tax_rate || 0) * 100).toFixed(4));
+        setTaxMessage('Tax settings saved successfully! New work orders will use this tax rate.');
+      } else {
+        const error = await response.json();
+        setTaxError('Failed to save tax settings: ' + error.error);
+      }
+    } catch (error) {
+      console.error('Error saving tax settings:', error);
+      setTaxError('Network error: Could not save tax settings');
+    } finally {
+      setIsSavingTax(false);
+    }
   };
 
   const openGmailSetupGuide = () => {
@@ -959,6 +1059,231 @@ Type "DELETE" to confirm:`;
               >
                 🔄 Reset to System Time
               </button>
+            </div>
+          </div>
+
+          {/* Tax Settings Section */}
+          <div style={{
+            backgroundColor: '#333',
+            padding: '25px',
+            borderRadius: '10px',
+            marginBottom: '30px',
+            border: '2px solid #FFD329'
+          }}>
+            <h3 style={{ marginTop: 0, marginBottom: '20px', color: '#FFD329' }}>
+              💰 Tax Settings
+            </h3>
+            <p style={{ color: '#ccc', marginBottom: '20px', fontSize: '14px' }}>
+              Configure your state tax rate for accurate work order calculations and reporting
+            </p>
+
+            {/* Tax Messages */}
+            {taxMessage && (
+              <div style={{
+                backgroundColor: '#2d5a2d',
+                color: '#90ee90',
+                padding: '12px',
+                borderRadius: '5px',
+                marginBottom: '15px',
+                border: '1px solid #4CAF50',
+                fontSize: '14px'
+              }}>
+                {taxMessage}
+              </div>
+            )}
+
+            {taxError && (
+              <div style={{
+                backgroundColor: '#5a2d2d',
+                color: '#ff9999',
+                padding: '12px',
+                borderRadius: '5px',
+                marginBottom: '15px',
+                border: '1px solid #f44336',
+                fontSize: '14px'
+              }}>
+                {taxError}
+              </div>
+            )}
+
+            {/* Tax Rate Display */}
+            <div style={{
+              backgroundColor: '#444',
+              padding: '15px',
+              borderRadius: '8px',
+              marginBottom: '20px',
+              border: '1px solid #666'
+            }}>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}>
+                <span style={{ color: '#ccc' }}>Current Tax Rate:</span>
+                <strong style={{ color: '#FFD329', fontSize: '18px' }}>
+                  {(parseFloat(taxSettings.tax_rate || 0) * 100).toFixed(4)}% ({taxSettings.state || 'N/A'})
+                </strong>
+              </div>
+              <div style={{
+                fontSize: '12px',
+                color: '#ccc',
+                marginTop: '5px'
+              }}>
+                {taxSettings.description || 'No description'}
+              </div>
+            </div>
+
+            {/* Tax Settings Form */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: '20px',
+              marginBottom: '20px'
+            }}>
+              <div>
+                <label style={{
+                  display: 'block',
+                  marginBottom: '8px',
+                  fontWeight: 'bold',
+                  color: '#FFD329'
+                }}>
+                  Tax Rate (%) *
+                </label>
+                <input
+                  type="number"
+                  step="0.0001"
+                  min="0"
+                  max="100"
+                  value={taxRateInput}
+                  onChange={(e) => handleTaxSettingChange('tax_rate', e.target.value)}
+                  placeholder="8.2500"
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    borderRadius: '5px',
+                    border: '1px solid #666',
+                    backgroundColor: '#444',
+                    color: '#FFD329',
+                    fontSize: '16px'
+                  }}
+                />
+                <div style={{
+                  fontSize: '12px',
+                  color: '#ccc',
+                  marginTop: '5px'
+                }}>
+                  Enter as percentage (e.g., 8.25 for 8.25%)
+                </div>
+              </div>
+
+              <div>
+                <label style={{
+                  display: 'block',
+                  marginBottom: '8px',
+                  fontWeight: 'bold',
+                  color: '#FFD329'
+                }}>
+                  State/Region *
+                </label>
+                <input
+                  type="text"
+                  value={taxSettings.state || ''}
+                  onChange={(e) => handleTaxSettingChange('state', e.target.value)}
+                  placeholder="CA"
+                  maxLength="50"
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    borderRadius: '5px',
+                    border: '1px solid #666',
+                    backgroundColor: '#444',
+                    color: '#FFD329',
+                    fontSize: '16px'
+                  }}
+                />
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{
+                display: 'block',
+                marginBottom: '8px',
+                fontWeight: 'bold',
+                color: '#FFD329'
+              }}>
+                Description (optional)
+              </label>
+              <input
+                type="text"
+                value={taxSettings.description || ''}
+                onChange={(e) => handleTaxSettingChange('description', e.target.value)}
+                placeholder="California State Tax"
+                maxLength="255"
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  borderRadius: '5px',
+                  border: '1px solid #666',
+                  backgroundColor: '#444',
+                  color: '#FFD329',
+                  fontSize: '16px'
+                }}
+              />
+            </div>
+
+            {/* Save Button */}
+            <div style={{ textAlign: 'left' }}>
+              <button
+                onClick={saveTaxSettings}
+                disabled={isSavingTax}
+                style={{
+                  backgroundColor: isSavingTax ? '#666' : '#4CAF50',
+                  color: 'white',
+                  padding: '12px 24px',
+                  fontSize: '16px',
+                  fontWeight: 'bold',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: isSavingTax ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                {isSavingTax ? (
+                  <>
+                    <span>⏳</span>
+                    <span>Saving...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>💾</span>
+                    <span>Save Tax Settings</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* Info Box */}
+            <div style={{
+              backgroundColor: '#2a2a2a',
+              padding: '15px',
+              borderRadius: '8px',
+              marginTop: '20px',
+              border: '1px solid #555'
+            }}>
+              <div style={{
+                color: '#FFD329',
+                fontWeight: 'bold',
+                marginBottom: '8px'
+              }}>
+                ℹ️ Important Information
+              </div>
+              <ul style={{ color: '#ccc', fontSize: '13px', margin: 0, paddingLeft: '20px' }}>
+                <li>This tax rate will be applied to all new work orders</li>
+                <li>Existing work orders will keep their original tax rates</li>
+                <li>Reports will use these settings for tax calculations</li>
+              </ul>
             </div>
           </div>
 

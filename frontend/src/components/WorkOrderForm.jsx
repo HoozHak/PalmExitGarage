@@ -12,19 +12,21 @@ function WorkOrderForm({ customerId, vehicleId, customerData, vehicleData, onWor
     vehicle_id: vehicleId || '',
     parts: [], // { part_id, quantity, cost_cents }
     labor: [], // { labor_id, quantity, cost_cents }
-    tax_rate: 0.0825,
+    tax_rate: 0.0825, // Default, will be loaded from settings
     notes: ''
   });
+  const [taxSettings, setTaxSettings] = useState(null);
 
   const [selectedParts, setSelectedParts] = useState([{ part_id: '', quantity: 1 }]);
   const [selectedLabor, setSelectedLabor] = useState([{ labor_id: '', quantity: 1 }]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
 
-  // Load parts, labor, and customer vehicles on component mount
+  // Load parts, labor, customer vehicles, and tax settings on component mount
   useEffect(() => {
     loadParts();
     loadLabor();
+    loadTaxSettings();
     if (customerId && !vehicleId) {
       loadCustomerVehicles();
     }
@@ -75,6 +77,24 @@ function WorkOrderForm({ customerId, vehicleId, customerData, vehicleData, onWor
       }
     } catch (error) {
       console.error('Error loading labor:', error);
+    }
+  };
+
+  const loadTaxSettings = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/settings/tax`);
+      if (response.ok) {
+        const data = await response.json();
+        setTaxSettings(data);
+        // Update work order with current tax rate
+        setWorkOrder(prev => ({
+          ...prev,
+          tax_rate: data.tax_rate
+        }));
+      }
+    } catch (error) {
+      console.error('Error loading tax settings:', error);
+      // Keep default tax rate if loading fails
     }
   };
 

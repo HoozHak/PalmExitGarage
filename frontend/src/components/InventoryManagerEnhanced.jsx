@@ -8,7 +8,26 @@ function InventoryManagerEnhanced() {
   const navigate = useNavigate();
   
   // Tab state
-  const [activeTab, setActiveTab] = useState('parts'); // 'parts' or 'labor'
+  const [activeTab, setActiveTab] = useState('parts'); // 'parts', 'labor', or 'database'
+  
+  // Database management state
+  const [selectedDatabases, setSelectedDatabases] = useState({
+    customers: false,
+    vehicles: false,
+    parts: false,
+    labor: false,
+    workOrders: false,
+    taxSettings: false
+  });
+  const [isDeletingDatabases, setIsDeletingDatabases] = useState(false);
+  const [databaseCounts, setDatabaseCounts] = useState({
+    customers: 0,
+    vehicles: 0,
+    parts: 0,
+    labor: 0,
+    workOrders: 0,
+    taxSettings: 0
+  });
   
   // Parts state
   const [parts, setParts] = useState([]);
@@ -67,7 +86,15 @@ function InventoryManagerEnhanced() {
   useEffect(() => {
     loadParts();
     loadLabor();
+    loadDatabaseCounts();
   }, []);
+  
+  // Reload database counts when active tab changes to database
+  useEffect(() => {
+    if (activeTab === 'database') {
+      loadDatabaseCounts();
+    }
+  }, [activeTab]);
 
   // Filter parts based on search term
   useEffect(() => {
@@ -442,6 +469,143 @@ function InventoryManagerEnhanced() {
     "Electrical", "AC/Heating", "Exhaust", "Oil Change", "Tune-Up", "Inspection", "Other"
   ];
 
+  // === DATABASE MANAGEMENT FUNCTIONS ===
+  const loadDatabaseCounts = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/database/counts`);
+      if (response.ok) {
+        const counts = await response.json();
+        setDatabaseCounts(counts);
+      }
+    } catch (error) {
+      console.error('Error loading database counts:', error);
+    }
+  };
+
+  const handleDatabaseSelection = (database, checked) => {
+    setSelectedDatabases(prev => ({
+      ...prev,
+      [database]: checked
+    }));
+  };
+
+  const handleDeleteDatabases = async () => {
+    const selectedTables = Object.keys(selectedDatabases).filter(key => selectedDatabases[key]);
+    
+    if (selectedTables.length === 0) {
+      alert('Please select at least one database to delete.');
+      return;
+    }
+
+    // First confirmation dialog
+    const tableNames = selectedTables.map(table => {
+      const tableMap = {
+        customers: 'Customers',
+        vehicles: 'Vehicles', 
+        parts: 'Parts Inventory',
+        labor: 'Labor & Pricing',
+        workOrders: 'Work Orders',
+        taxSettings: 'Tax Settings'
+      };
+      return tableMap[table];
+    }).join(', ');
+
+    const firstConfirm = confirm(
+      `⚠️ CRITICAL WARNING ⚠️\n\n` +
+      `You are about to PERMANENTLY DELETE the following databases:\n\n` +
+      `${tableNames}\n\n` +
+      `This action will:\n` +
+      `• Remove ALL data from selected databases\n` +
+      `• Cannot be undone\n` +
+      `• May affect related data due to database relationships\n\n` +
+      `Are you absolutely sure you want to continue?\n\n` +
+      `Click OK to proceed to final confirmation, or Cancel to abort.`
+    );
+
+    if (!firstConfirm) {
+      return;
+    }
+
+    // Second confirmation with typing requirement
+    const secondConfirm = prompt(
+      `🚨 FINAL CONFIRMATION REQUIRED 🚨\n\n` +
+      `You are about to permanently delete:\n${tableNames}\n\n` +
+      `This will remove:\n` +
+      selectedTables.map(table => {
+        const count = databaseCounts[table] || 0;
+        const desc = {
+          customers: `${count} customer records`,
+          vehicles: `${count} vehicle records`,
+          parts: `${count} parts from inventory`,
+          labor: `${count} labor items`,
+          workOrders: `${count} work orders with all history`,
+          taxSettings: `Tax configuration settings`
+        };
+        return `• ${desc[table]}`;
+      }).join('\n') + '\n\n' +
+      `⚠️ THIS CANNOT BE UNDONE! ⚠️\n\n` +
+      `To confirm this permanent deletion, type:\n` +
+      `DELETE_CONFIRMED\n\n` +
+      `Type exactly as shown (case-sensitive):`
+    );
+
+    if (secondConfirm !== 'DELETE_CONFIRMED') {
+      alert('Database deletion cancelled. You must type "DELETE_CONFIRMED" exactly to proceed.');
+      return;
+    }
+
+    // Proceed with deletion
+    setIsDeletingDatabases(true);
+    
+    try {
+      const response = await fetch(`${API_BASE}/database/delete`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          tables: selectedTables,
+          confirmationKey: 'DELETE_CONFIRMED_TWICE'
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        alert(
+          `Database deletion completed successfully!\n\n` +
+          `Results:\n` +
+          Object.entries(result.results).map(([table, data]) => 
+            `• ${data.description}: ${data.rowsDeleted} records deleted`
+          ).join('\n')
+        );
+        
+        // Clear selections and reload counts
+        setSelectedDatabases({
+          customers: false,
+          vehicles: false,
+          parts: false,
+          labor: false,
+          workOrders: false,
+          taxSettings: false
+        });
+        
+        // Reload all data
+        loadDatabaseCounts();
+        loadParts();
+        loadLabor();
+        
+      } else {
+        const error = await response.json();
+        alert(`Database deletion failed:\n${error.message}`);
+      }
+    } catch (error) {
+      console.error('Error deleting databases:', error);
+      alert('Network error: Could not delete databases');
+    } finally {
+      setIsDeletingDatabases(false);
+    }
+  };
+
   return (
     <div style={{
       backgroundColor: 'black',
@@ -507,6 +671,22 @@ function InventoryManagerEnhanced() {
               }}
             >
               Labor & Pricing ({labor.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('database')}
+              style={{
+                flex: 1,
+                backgroundColor: activeTab === 'database' ? '#FFD329' : '#444',
+                color: activeTab === 'database' ? 'black' : '#FFD329',
+                padding: '15px 20px',
+                fontSize: '18px',
+                fontWeight: 'bold',
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'all 0.3s'
+              }}
+            >
+              🗑️ Database Management
             </button>
           </div>
 
@@ -1795,6 +1975,252 @@ function InventoryManagerEnhanced() {
             </div>
           )}
 
+          {/* Database Management Tab Content */}
+          {activeTab === 'database' && (
+            <div>
+              <div style={{
+                backgroundColor: '#1a1a1a',
+                padding: '25px',
+                borderRadius: '10px',
+                border: '2px solid #f44336',
+                marginBottom: '20px'
+              }}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  marginBottom: '20px'
+                }}>
+                  <div style={{
+                    fontSize: '24px',
+                    marginRight: '10px'
+                  }}>⚠️</div>
+                  <h3 style={{
+                    margin: 0,
+                    color: '#f44336',
+                    fontSize: '20px'
+                  }}>DANGER ZONE - Database Management</h3>
+                </div>
+                
+                <p style={{
+                  color: '#ff9800',
+                  marginBottom: '20px',
+                  fontSize: '16px',
+                  fontWeight: 'bold'
+                }}>
+                  ⚠️ WARNING: These actions will permanently delete data from your database.
+                  This cannot be undone. Use with extreme caution.
+                </p>
+                
+                <div style={{
+                  backgroundColor: '#333',
+                  padding: '20px',
+                  borderRadius: '8px',
+                  marginBottom: '20px'
+                }}>
+                  <h4 style={{
+                    color: '#FFD329',
+                    marginTop: 0,
+                    marginBottom: '15px'
+                  }}>Select Databases to Delete:</h4>
+                  
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                    gap: '15px',
+                    marginBottom: '20px'
+                  }}>
+                    {[
+                      { key: 'customers', label: 'Customers', icon: '👥' },
+                      { key: 'vehicles', label: 'Vehicles', icon: '🚗' },
+                      { key: 'parts', label: 'Parts Inventory', icon: '🔧' },
+                      { key: 'labor', label: 'Labor & Pricing', icon: '⚙️' },
+                      { key: 'workOrders', label: 'Work Orders', icon: '📋' },
+                      { key: 'taxSettings', label: 'Tax Settings', icon: '💰' }
+                    ].map(db => (
+                      <div
+                        key={db.key}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          backgroundColor: selectedDatabases[db.key] ? '#4CAF50' : '#444',
+                          padding: '12px',
+                          borderRadius: '8px',
+                          border: selectedDatabases[db.key] ? '2px solid #4CAF50' : '1px solid #666',
+                          cursor: 'pointer',
+                          transition: 'all 0.3s'
+                        }}
+                        onClick={() => handleDatabaseSelection(db.key, !selectedDatabases[db.key])}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedDatabases[db.key]}
+                          onChange={(e) => handleDatabaseSelection(db.key, e.target.checked)}
+                          style={{
+                            marginRight: '10px',
+                            transform: 'scale(1.2)'
+                          }}
+                        />
+                        <div style={{
+                          fontSize: '20px',
+                          marginRight: '8px'
+                        }}>{db.icon}</div>
+                        <div style={{
+                          flex: 1
+                        }}>
+                          <div style={{
+                            fontWeight: 'bold',
+                            color: selectedDatabases[db.key] ? 'white' : '#FFD329',
+                            marginBottom: '4px'
+                          }}>
+                            {db.label}
+                          </div>
+                          <div style={{
+                            fontSize: '12px',
+                            color: selectedDatabases[db.key] ? '#e0e0e0' : '#ccc'
+                          }}>
+                            {databaseCounts[db.key] || 0} records
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'center'
+                }}>
+                  <button
+                    onClick={handleDeleteDatabases}
+                    disabled={isDeletingDatabases || Object.values(selectedDatabases).every(v => !v)}
+                    style={{
+                      backgroundColor: isDeletingDatabases ? '#666' : '#f44336',
+                      color: 'white',
+                      padding: '15px 30px',
+                      fontSize: '16px',
+                      fontWeight: 'bold',
+                      border: 'none',
+                      borderRadius: '8px',
+                      cursor: isDeletingDatabases || Object.values(selectedDatabases).every(v => !v) ? 'not-allowed' : 'pointer',
+                      opacity: Object.values(selectedDatabases).every(v => !v) ? 0.5 : 1,
+                      transition: 'all 0.3s'
+                    }}
+                  >
+                    {isDeletingDatabases ? (
+                      <span>
+                        <span style={{ marginRight: '8px' }}>⏳</span>
+                        Deleting Selected Databases...
+                      </span>
+                    ) : (
+                      <span>
+                        <span style={{ marginRight: '8px' }}>🗑️</span>
+                        Delete Selected Databases
+                      </span>
+                    )}
+                  </button>
+                </div>
+                
+                {Object.values(selectedDatabases).some(v => v) && (
+                  <div style={{
+                    marginTop: '15px',
+                    padding: '15px',
+                    backgroundColor: '#444',
+                    borderRadius: '8px',
+                    border: '1px solid #ff9800'
+                  }}>
+                    <div style={{
+                      color: '#ff9800',
+                      fontWeight: 'bold',
+                      marginBottom: '8px',
+                      display: 'flex',
+                      alignItems: 'center'
+                    }}>
+                      <span style={{ marginRight: '8px' }}>⚠️</span>
+                      Selected for Deletion:
+                    </div>
+                    <div style={{
+                      color: '#ccc',
+                      fontSize: '14px'
+                    }}>
+                      {Object.entries(selectedDatabases)
+                        .filter(([key, selected]) => selected)
+                        .map(([key, _]) => {
+                          const labels = {
+                            customers: 'Customers',
+                            vehicles: 'Vehicles',
+                            parts: 'Parts Inventory',
+                            labor: 'Labor & Pricing',
+                            workOrders: 'Work Orders',
+                            taxSettings: 'Tax Settings'
+                          };
+                          return `${labels[key]} (${databaseCounts[key] || 0} records)`;
+                        })
+                        .join(', ')}
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              {/* Database Status Information */}
+              <div style={{
+                backgroundColor: '#333',
+                padding: '20px',
+                borderRadius: '10px'
+              }}>
+                <h4 style={{
+                  color: '#FFD329',
+                  marginTop: 0,
+                  marginBottom: '15px'
+                }}>📊 Database Status</h4>
+                
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+                  gap: '10px'
+                }}>
+                  {[
+                    { key: 'customers', label: 'Customers', icon: '👥', color: '#2196F3' },
+                    { key: 'vehicles', label: 'Vehicles', icon: '🚗', color: '#FF5722' },
+                    { key: 'parts', label: 'Parts', icon: '🔧', color: '#4CAF50' },
+                    { key: 'labor', label: 'Labor Items', icon: '⚙️', color: '#FF9800' },
+                    { key: 'workOrders', label: 'Work Orders', icon: '📋', color: '#9C27B0' },
+                    { key: 'taxSettings', label: 'Tax Config', icon: '💰', color: '#FFD329' }
+                  ].map(db => (
+                    <div
+                      key={db.key}
+                      style={{
+                        backgroundColor: '#444',
+                        padding: '12px',
+                        borderRadius: '8px',
+                        textAlign: 'center',
+                        border: `2px solid ${db.color}`
+                      }}
+                    >
+                      <div style={{
+                        fontSize: '24px',
+                        marginBottom: '5px'
+                      }}>{db.icon}</div>
+                      <div style={{
+                        fontSize: '18px',
+                        fontWeight: 'bold',
+                        color: db.color,
+                        marginBottom: '3px'
+                      }}>
+                        {databaseCounts[db.key] || 0}
+                      </div>
+                      <div style={{
+                        fontSize: '12px',
+                        color: '#ccc'
+                      }}>
+                        {db.label}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
           <div style={{
             marginTop: '20px',
             padding: '15px',
@@ -1803,7 +2229,7 @@ function InventoryManagerEnhanced() {
             fontSize: '14px',
             color: '#ccc'
           }}>
-            <strong>Note:</strong> Use the tabs above to switch between managing Parts inventory and Labor/Pricing. 
+            <strong>Note:</strong> Use the tabs above to switch between managing Parts inventory, Labor/Pricing, and Database Management. 
             All changes are automatically saved to the database.
           </div>
         </div>
