@@ -1,6 +1,6 @@
 {
   "name": "palmexitgarage-server",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Professional Auto Repair Shop Management System - Backend Server with Database Management",
   "main": "index.js",
   "license": "MIT",
