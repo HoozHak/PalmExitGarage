@@ -1,5 +1,47 @@
 # PalmExitGarage - Changelog
 
+## Version 1.1.0 - Inventory Management Release (2025-09-30)
+
+### Major New Features
+
+#### Intelligent Inventory Management System
+- Automatic Parts Deduction - Parts are automatically deducted from inventory when work orders are approved
+- Double-Deduction Prevention - Database tracking prevents inventory from being deducted multiple times
+- Status Change Tracking - System monitors work order status changes and only deducts on "Estimate" to "Approved" transition
+- Inventory Database Flag - New `inventory_deducted` column in work_orders table tracks deduction status
+- Zero-Inventory Protection - Inventory quantities cannot go below zero (uses GREATEST(0, quantity - deduction))
+
+#### User Interface Improvements
+- Email Settings Cleanup - Removed duplicate "detailed setup guide" buttons for cleaner interface
+- Shop Name Default Removed - Shop name field now starts blank instead of defaulting to "Palm Exit Garage"
+- Input Field Overflow Fix - Added proper CSS box-sizing to prevent input fields from overflowing containers
+- Professional Layout - All form fields now properly align within their containers
+
+#### Database Schema Enhancements
+- New Migration System - Added migrations folder with structured database updates
+- Inventory Deduction Migration - `add_inventory_deducted_column.js` adds tracking to existing work orders
+- Backwards Compatibility - Existing approved work orders are automatically marked as having inventory deducted
+
+### Technical Improvements
+
+#### Backend API Enhancements
+- Enhanced Status Update Endpoint - `PUT /api/work-orders/:id/status` now handles inventory deduction logic
+- Inventory Deduction Function - New `deductInventoryForWorkOrder()` function with comprehensive error handling
+- Smart Status Detection - System checks both current and new status before deducting inventory
+- Detailed API Responses - Status updates now include `inventory_deducted: true/false` in response
+
+#### Database Improvements
+- Clean Sample Data - Fresh database with 4 sample customers, 4 vehicles, 0 work orders
+- Email Configuration Cleared - No default SMTP settings, ready for user configuration
+- Parts Inventory Reset - All parts properly stocked with appropriate quantities
+
+### User Experience Enhancements
+- Clear Visual Feedback - Users receive confirmation when inventory is deducted
+- Error Handling - Graceful handling of inventory deduction failures with detailed error messages
+- Professional Workflow - Seamless transition from estimate creation to approval with automatic inventory management
+
+---
+
 ## Version 1.0.0 - Database Management Release (2025-09-29)
 
 ### Major New Features

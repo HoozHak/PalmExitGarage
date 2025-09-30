@@ -11,6 +11,7 @@
 - Complete database: 6,057 vehicles (2010-2025) and 88 professional parts
 - AutoZone business pricing with Honda Crosstour coverage
 - Automated installer handles Node.js, Docker, and all dependencies
+- Automatic inventory management with intelligent deduction system
 - Automatic customer email notifications
 - Modern React-based web interface
 
@@ -80,6 +81,8 @@ cd ../frontend && npm run dev
 ### Work Orders & Estimates
 - Professional work order creation with parts and labor
 - Status workflow: `Estimate → Approved → Started → Complete`
+- Automatic inventory deduction when estimates are approved
+- Double-deduction prevention with database tracking
 - Digital signature capture (drawn or typed)
 - Automatic tax calculations and professional receipts
 - Print and email functionality
@@ -87,6 +90,8 @@ cd ../frontend && npm run dev
 ### Inventory & Parts Management
 - 88 professional parts with AutoZone business pricing
 - Real-time inventory tracking and stock management
+- Automatic inventory deduction when work orders are approved
+- Intelligent deduction prevention (no double-deduction)
 - 11 categories: Engine, Brakes, Suspension, Electrical, Fluids, etc.
 - Quality brands: ACDelco, Bosch, Wagner, Monroe, Mobil 1, Interstate
 - Database management: Professional database administration with selective deletion capabilities
@@ -97,12 +102,20 @@ cd ../frontend && npm run dev
 - Gmail SMTP integration with App Password support
 - Receipt generation and delivery
 
+### Intelligent Inventory Management
+- Automatic parts deduction when work orders are approved
+- Smart tracking prevents double-deduction of inventory
+- Database-level tracking of inventory deduction status
+- Real-time inventory updates and stock management
+- Negative inventory prevention (minimum quantity: 0)
+
 ### Database Management
 - Professional database administration with secure deletion controls
 - Selective database deletion - Choose specific tables to clear (Customers, Vehicles, Parts, etc.)
 - Dual-confirmation safety - Multiple confirmation prompts prevent accidental data loss
 - Smart relationship handling - Respects foreign key constraints and dependent data
 - Complete database status - Real-time record counts and system overview
+- Automated backup system ready (Google Drive integration planned for future release)
 
 ### Comprehensive Vehicle Database
 - 6,057 vehicle combinations covering 2010-2025
@@ -129,8 +142,9 @@ cd ../frontend && npm run dev
 2. **Vehicle Management**: Add vehicles from 6,000+ database, edit details, automatic deletion with customer
 3. **Work Order Creation**: Build estimates with professional parts catalog + labor services
 4. **Status Workflow**: Track progress through Estimate → Approved → Started → Complete
-5. **Data Safety**: Cascade deletion with confirmation - removing customers cleans up all related data
-6. **Email Automation**: Customers receive professional pickup notifications when work is complete
+5. **Inventory Control**: Automatic parts deduction when estimates are approved, with prevention of double-deduction
+6. **Data Safety**: Cascade deletion with confirmation - removing customers cleans up all related data
+7. **Email Automation**: Customers receive professional pickup notifications when work is complete
 
 ### Professional Parts Selection
 - Browse by category (Engine, Brakes, Suspension, etc.)
@@ -159,6 +173,7 @@ PalmExitGarage/
 │   ├── index.js                    # Main server file
 │   ├── config/database.js          # Database configuration
 │   ├── migrate.js                  # Database schema setup
+│   ├── migrations/                 # Database migration scripts
 │   ├── seed_comprehensive_vehicles.js  # Vehicle database seeder
 │   ├── seed_autozone_parts.js      # Parts catalog seeder
 │   └── package.json               # Backend dependencies

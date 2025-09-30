@@ -40,15 +40,17 @@ This installation package contains:
 - PalmExitGarage Frontend (React-based web interface)
 - PalmExitGarage Backend (Node.js/Express server)
 - MySQL Database (Running in Docker container)
+- Automatic inventory management with intelligent deduction system
 - Database Management System (Professional administration tools)
 - Automatic installers for Node.js and Docker Desktop
 
 ### Database Content
 - 6,057 Vehicle Models (2010-2025, all major manufacturers)
-- 88 Professional Parts (AutoZone business pricing)
-- Sample Customer Data (4 customers, 5 vehicles)
+- 88 Professional Parts (AutoZone business pricing) with inventory tracking
+- Sample Customer Data (4 customers, 4 vehicles)
 - Labor Operations Catalog (10 common services)
 - Honda Crosstour Models (2010-2015, all variants)
+- Clean work order history (ready for production use)
 
 ---
 
@@ -100,9 +102,10 @@ Once started, PalmExitGarage will be available at:
 
 ### Sample Data
 - **4 Sample Customers** with complete contact information
-- **5 Sample Vehicles** associated with customers
+- **4 Sample Vehicles** associated with customers
 - **10 Labor Operations** with realistic pricing and time estimates
 - **Clean Work Orders**: No existing work orders - ready for fresh start
+- **Inventory Management**: All parts properly tracked with quantity on hand
 
 ---
 

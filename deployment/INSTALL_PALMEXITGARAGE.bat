@@ -118,7 +118,7 @@ echo.
 echo The application has been successfully installed with:
 echo   * 6,057+ Vehicle Models (2010-2025, all major brands)
 echo   * 88+ Professional Parts (AutoZone business pricing)
-echo   * Honda Crosstour included (2010-2015, all variants)
+echo   * Automatic inventory management with intelligent deduction system
 echo   * Complete work order and customer management system
 echo   * Professional email automation
 echo   * Database management and administration tools
