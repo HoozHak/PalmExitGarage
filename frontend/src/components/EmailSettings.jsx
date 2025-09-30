@@ -17,7 +17,7 @@ function EmailSettings() {
   const [emailConfig, setEmailConfig] = useState({
     email: '',
     password: '',
-    shopName: 'Palm Exit Garage'
+    shopName: ''
   });
   const [emailStatus, setEmailStatus] = useState({
     configured: false,
@@ -77,7 +77,7 @@ function EmailSettings() {
           setEmailConfig({
             email: status.shopEmail || status.savedEmail || '',
             password: '',
-            shopName: status.shopName || status.savedShopName || 'Palm Exit Garage'
+            shopName: status.shopName || status.savedShopName || ''
           });
         }
         
@@ -911,7 +911,8 @@ Type "DELETE" to confirm:`;
                         border: '1px solid #666',
                         backgroundColor: '#555',
                         color: '#FFD329',
-                        fontSize: '14px'
+                        fontSize: '14px',
+                        boxSizing: 'border-box'
                       }}
                     />
                   </div>
@@ -936,7 +937,8 @@ Type "DELETE" to confirm:`;
                         border: '1px solid #666',
                         backgroundColor: '#555',
                         color: '#FFD329',
-                        fontSize: '14px'
+                        fontSize: '14px',
+                        boxSizing: 'border-box'
                       }}
                     />
                   </div>
@@ -966,7 +968,8 @@ Type "DELETE" to confirm:`;
                   backgroundColor: timeSettings.autoDetectTimezone ? '#555' : '#444',
                   color: timeSettings.autoDetectTimezone ? '#999' : '#FFD329',
                   fontSize: '14px',
-                  cursor: timeSettings.autoDetectTimezone ? 'not-allowed' : 'pointer'
+                  cursor: timeSettings.autoDetectTimezone ? 'not-allowed' : 'pointer',
+                  boxSizing: 'border-box'
                 }}
               >
                 {getCommonTimezones().map(tz => (
@@ -1164,7 +1167,8 @@ Type "DELETE" to confirm:`;
                     border: '1px solid #666',
                     backgroundColor: '#444',
                     color: '#FFD329',
-                    fontSize: '16px'
+                    fontSize: '16px',
+                    boxSizing: 'border-box'
                   }}
                 />
                 <div style={{
@@ -1198,7 +1202,8 @@ Type "DELETE" to confirm:`;
                     border: '1px solid #666',
                     backgroundColor: '#444',
                     color: '#FFD329',
-                    fontSize: '16px'
+                    fontSize: '16px',
+                    boxSizing: 'border-box'
                   }}
                 />
               </div>
@@ -1226,7 +1231,8 @@ Type "DELETE" to confirm:`;
                   border: '1px solid #666',
                   backgroundColor: '#444',
                   color: '#FFD329',
-                  fontSize: '16px'
+                  fontSize: '16px',
+                  boxSizing: 'border-box'
                 }}
               />
             </div>
@@ -1473,35 +1479,11 @@ Type "DELETE" to confirm:`;
               backgroundColor: '#333',
               padding: '15px',
               borderRadius: '5px',
-              marginTop: '15px',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              flexWrap: 'wrap',
-              gap: '15px'
+              marginTop: '15px'
             }}>
-              <p style={{ margin: 0, fontSize: '14px', color: '#FFD329', flex: 1 }}>
+              <p style={{ margin: 0, fontSize: '14px', color: '#FFD329' }}>
                 💡 <strong>Why App Password?</strong> Gmail requires App Passwords for security when accessing from applications like this one.
               </p>
-              <button
-                onClick={openGmailSetupGuide}
-                style={{
-                  backgroundColor: '#4CAF50',
-                  color: 'white',
-                  padding: '10px 20px',
-                  fontSize: '14px',
-                  fontWeight: 'bold',
-                  border: 'none',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                📖 Detailed Setup Guide
-              </button>
             </div>
             
             {/* Additional Quick Help */}
@@ -1513,7 +1495,7 @@ Type "DELETE" to confirm:`;
               textAlign: 'center'
             }}>
               <p style={{ margin: 0, fontSize: '13px', color: '#ccc' }}>
-                ❓ <strong>Need help?</strong> Click the "Detailed Setup Guide" button above for complete step-by-step instructions with screenshots and troubleshooting tips.
+                ❓ <strong>Need help?</strong> Click the "Open Detailed Guide" button above for complete step-by-step instructions with screenshots and troubleshooting tips.
               </p>
             </div>
           </div>
@@ -1553,7 +1535,8 @@ Type "DELETE" to confirm:`;
                       border: '1px solid #666',
                       backgroundColor: '#444',
                       color: '#FFD329',
-                      fontSize: '16px'
+                      fontSize: '16px',
+                      boxSizing: 'border-box'
                     }}
                     placeholder="your-email@gmail.com"
                   />
@@ -1575,7 +1558,8 @@ Type "DELETE" to confirm:`;
                       border: '1px solid #666',
                       backgroundColor: '#444',
                       color: '#FFD329',
-                      fontSize: '16px'
+                      fontSize: '16px',
+                      boxSizing: 'border-box'
                     }}
                     placeholder="Your Shop Name"
                   />
@@ -1601,7 +1585,8 @@ Type "DELETE" to confirm:`;
                       border: '1px solid #666',
                       backgroundColor: '#444',
                       color: '#FFD329',
-                      fontSize: '16px'
+                      fontSize: '16px',
+                      boxSizing: 'border-box'
                     }}
                     placeholder="Enter your Gmail App Password"
                   />
@@ -1678,7 +1663,8 @@ Type "DELETE" to confirm:`;
                       border: '1px solid #666',
                       backgroundColor: '#444',
                       color: '#FFD329',
-                      fontSize: '16px'
+                      fontSize: '16px',
+                      boxSizing: 'border-box'
                     }}
                     placeholder="test@example.com"
                   />
