@@ -1252,7 +1252,7 @@ app.post('/api/work-orders', (req, res) => {
         const work_order_id = result.insertId;
         let promises = [];
         
-        // Insert parts
+        // Insert parts and deduct inventory if this is an approved work order
         if (parts && parts.length > 0) {
             const partQuery = 'INSERT INTO work_order_parts (work_order_id, part_id, quantity, cost_cents) VALUES ?';
             const partValues = parts.map(p => [work_order_id, p.part_id, p.quantity, p.cost_cents]);
@@ -1262,6 +1262,27 @@ app.post('/api/work-orders', (req, res) => {
                     else resolve();
                 });
             }));
+            
+            // If this work order is not just an estimate, deduct parts from inventory
+            // We'll check the is_estimate flag from the request body
+            const isEstimate = req.body.is_estimate || false;
+            if (!isEstimate) {
+                // Deduct inventory for each part
+                parts.forEach(part => {
+                    const inventoryQuery = 'UPDATE parts SET quantity_on_hand = GREATEST(0, quantity_on_hand - ?) WHERE part_id = ?';
+                    promises.push(new Promise((resolve, reject) => {
+                        db.query(inventoryQuery, [part.quantity, part.part_id], (err, result) => {
+                            if (err) {
+                                console.error(`Error deducting inventory for part ${part.part_id}:`, err);
+                                reject(err);
+                            } else {
+                                console.log(`Deducted ${part.quantity} units of part ${part.part_id} from inventory`);
+                                resolve();
+                            }
+                        });
+                    }));
+                });
+            }
         }
         
         // Insert labor
@@ -1429,27 +1450,128 @@ app.put('/api/work-orders/:id/status', async (req, res) => {
         return res.status(400).json({ error: 'Invalid status value. Valid statuses are: Estimate, Approved, Started, Complete, Cancelled' });
     }
     
-    const query = 'UPDATE work_orders SET status = ? WHERE work_order_id = ?';
+    // First get the current status and inventory deduction flag to check if we should deduct inventory
+    const getCurrentStatusQuery = 'SELECT status, inventory_deducted FROM work_orders WHERE work_order_id = ?';
     
-    db.query(query, [status, workOrderId], async (err, result) => {
+    db.query(getCurrentStatusQuery, [workOrderId], async (err, statusResult) => {
         if (err) {
-            console.error(err);
-            res.status(500).json({ error: 'Database error updating status' });
+            console.error('Error getting current work order status:', err);
+            res.status(500).json({ error: 'Database error getting current status' });
             return;
         }
         
-        if (result.affectedRows === 0) {
+        if (statusResult.length === 0) {
             res.status(404).json({ error: 'Work order not found' });
             return;
         }
         
-        res.json({ 
-            message: `Work order status updated to ${status}`,
-            work_order_id: workOrderId,
-            status: status
+        const currentStatus = statusResult[0].status;
+        const inventoryAlreadyDeducted = statusResult[0].inventory_deducted || false;
+        const isApprovingEstimate = currentStatus === 'Estimate' && status === 'Approved' && !inventoryAlreadyDeducted;
+        
+        // Update the status and inventory flag if needed
+        let updateStatusQuery, updateParams;
+        if (isApprovingEstimate) {
+            updateStatusQuery = 'UPDATE work_orders SET status = ?, inventory_deducted = TRUE WHERE work_order_id = ?';
+            updateParams = [status, workOrderId];
+        } else {
+            updateStatusQuery = 'UPDATE work_orders SET status = ? WHERE work_order_id = ?';
+            updateParams = [status, workOrderId];
+        }
+        
+        db.query(updateStatusQuery, updateParams, async (err, result) => {
+            if (err) {
+                console.error('Error updating work order status:', err);
+                res.status(500).json({ error: 'Database error updating status' });
+                return;
+            }
+            
+            if (result.affectedRows === 0) {
+                res.status(404).json({ error: 'Work order not found' });
+                return;
+            }
+            
+            // If we're approving an estimate, deduct inventory for the parts
+            if (isApprovingEstimate) {
+                try {
+                    await deductInventoryForWorkOrder(workOrderId);
+                    console.log(`Inventory deducted for approved work order #${workOrderId}`);
+                    
+                    res.json({ 
+                        message: `Work order status updated to ${status}. Inventory has been deducted for the parts used.`,
+                        work_order_id: workOrderId,
+                        status: status,
+                        inventory_deducted: true
+                    });
+                } catch (inventoryError) {
+                    console.error('Error deducting inventory for work order:', inventoryError);
+                    res.json({ 
+                        message: `Work order status updated to ${status}, but there was an issue deducting inventory.`,
+                        work_order_id: workOrderId,
+                        status: status,
+                        inventory_deducted: false,
+                        inventory_error: inventoryError.message
+                    });
+                }
+            } else {
+                res.json({ 
+                    message: `Work order status updated to ${status}`,
+                    work_order_id: workOrderId,
+                    status: status
+                });
+            }
         });
     });
 });
+
+// Helper function to deduct inventory when a work order is approved
+async function deductInventoryForWorkOrder(workOrderId) {
+    return new Promise((resolve, reject) => {
+        // Get all parts for this work order
+        const getPartsQuery = `
+            SELECT wop.part_id, wop.quantity, p.brand, p.item, p.quantity_on_hand
+            FROM work_order_parts wop
+            JOIN parts p ON wop.part_id = p.part_id
+            WHERE wop.work_order_id = ?
+        `;
+        
+        db.query(getPartsQuery, [workOrderId], (err, partsResults) => {
+            if (err) {
+                reject(new Error(`Failed to get parts for work order: ${err.message}`));
+                return;
+            }
+            
+            if (partsResults.length === 0) {
+                console.log(`No parts found for work order #${workOrderId}`);
+                resolve();
+                return;
+            }
+            
+            // Deduct inventory for each part
+            const inventoryPromises = partsResults.map(part => {
+                return new Promise((resolveInventory, rejectInventory) => {
+                    const deductQuery = 'UPDATE parts SET quantity_on_hand = GREATEST(0, quantity_on_hand - ?) WHERE part_id = ?';
+                    
+                    db.query(deductQuery, [part.quantity, part.part_id], (updateErr, updateResult) => {
+                        if (updateErr) {
+                            console.error(`Error deducting inventory for part ${part.part_id}:`, updateErr);
+                            rejectInventory(new Error(`Failed to deduct inventory for ${part.brand} ${part.item}: ${updateErr.message}`));
+                            return;
+                        }
+                        
+                        const newQuantity = Math.max(0, part.quantity_on_hand - part.quantity);
+                        console.log(`Deducted ${part.quantity} units of ${part.brand} ${part.item} (Part ID: ${part.part_id}). New quantity: ${newQuantity}`);
+                        resolveInventory();
+                    });
+                });
+            });
+            
+            Promise.all(inventoryPromises)
+                .then(() => resolve())
+                .catch(err => reject(err));
+        });
+    });
+}
 
 // Update work order with signature
 app.put('/api/work-orders/:id/signature', async (req, res) => {
