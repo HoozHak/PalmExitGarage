@@ -1737,6 +1737,49 @@ app.put('/api/work-orders/:id/signature', async (req, res) => {
     });
 });
 
+// Approve work order with simple signature/name
+app.post('/api/work-orders/:id/approve', (req, res) => {
+    const { signature, customer_name } = req.body;
+    const workOrderId = req.params.id;
+    
+    if (!signature && !customer_name) {
+        return res.status(400).json({ error: 'Either signature or customer name is required' });
+    }
+    
+    const signatureData = signature || `Typed: ${customer_name}`;
+    const signedDate = new Date().toISOString().slice(0, 19).replace('T', ' ');
+    
+    const query = `
+        UPDATE work_orders 
+        SET status = 'Approved', 
+            signature_data = ?, 
+            customer_signature_name = ?, 
+            signature_type = 'typed',
+            signed_date = ?
+        WHERE work_order_id = ?
+    `;
+    
+    db.query(query, [signatureData, customer_name || 'Customer', signedDate, workOrderId], (err, result) => {
+        if (err) {
+            console.error(err);
+            res.status(500).json({ error: 'Database error approving work order' });
+            return;
+        }
+        
+        if (result.affectedRows === 0) {
+            res.status(404).json({ error: 'Work order not found' });
+            return;
+        }
+        
+        res.json({ 
+            message: 'Work order approved successfully',
+            work_order_id: workOrderId,
+            status: 'Approved',
+            signed_date: signedDate
+        });
+    });
+});
+
 // ===== EMAIL SERVICE ENDPOINTS =====
 // Configure email service
 app.post('/api/email/configure', (req, res) => {
