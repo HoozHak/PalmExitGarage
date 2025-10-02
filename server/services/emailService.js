@@ -101,8 +101,8 @@ class EmailService {
 
   // Verify email configuration
   async verifyConnection() {
-    if (!this.transporter) {
-      throw new Error('Email service not configured');
+    if (!this.transporter || !this.isConfigured) {
+      throw new Error('SMTP service not setup to send email. Please go to Settings and setup SMTP for automatic email function to operate.');
     }
 
     try {
@@ -474,7 +474,7 @@ class EmailService {
   // Send work order completion notification
   async sendWorkOrderCompletion(workOrderData) {
     if (!this.isConfigured) {
-      throw new Error('Email service not configured');
+      throw new Error('SMTP service not setup to send email. Please go to Settings and setup SMTP for automatic email function to operate.');
     }
 
     const { customer, workOrder } = workOrderData;
@@ -510,7 +510,7 @@ class EmailService {
   // Send work order receipt email
   async sendWorkOrderReceipt(workOrderData) {
     if (!this.isConfigured) {
-      throw new Error('Email service not configured');
+      throw new Error('SMTP service not setup to send email. Please go to Settings and setup SMTP for automatic email function to operate.');
     }
 
     const { customer, workOrder } = workOrderData;
@@ -547,7 +547,7 @@ class EmailService {
   // Test email configuration
   async sendTestEmail(recipientEmail) {
     if (!this.isConfigured) {
-      throw new Error('Email service not configured');
+      throw new Error('SMTP service not setup to send email. Please go to Settings and setup SMTP for automatic email function to operate.');
     }
 
     const mailOptions = {

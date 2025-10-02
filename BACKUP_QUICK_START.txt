@@ -1,0 +1,60 @@
+═══════════════════════════════════════════════════════════════
+  DATABASE BACKUP & RESTORE - QUICK REFERENCE
+  PalmExitGarage v1.1.0
+═══════════════════════════════════════════════════════════════
+
+📁 BACKUP FILE LOCATION:
+   C:\palmexitgarage_test\server\backups\
+
+📝 FILE FORMAT:
+   databasename_backup_timestamp.sql
+   Example: palmexitgarage_backup_2025-10-02T15-30-45.sql
+
+═══════════════════════════════════════════════════════════════
+
+🔷 TO CREATE A BACKUP:
+   1. Open the app
+   2. Click "💾 Database Backup" 
+   3. Select database
+   4. Click "Create Backup"
+   ✓ File saved to: server\backups\
+
+🔷 TO STORE BACKUP SAFELY:
+   1. Open File Explorer (Windows + E)
+   2. Go to: C:\palmexitgarage_test\server\backups\
+   3. Copy your backup file
+   4. Paste to USB drive or cloud storage
+
+🔷 TO RESTORE FROM EXTERNAL BACKUP:
+   1. Copy backup file from external storage
+   2. Paste into: C:\palmexitgarage_test\server\backups\
+   3. Open Database Backup page in app
+   4. Refresh page
+   5. Click "Restore" button
+   6. Type "RESTORE" to confirm
+
+═══════════════════════════════════════════════════════════════
+
+⚠️  WARNING - RESTORE OPERATION:
+   
+   • Restoring REPLACES ALL CURRENT DATA
+   • Data created after backup will be LOST
+   • This action CANNOT BE UNDONE
+   • ALWAYS create a new backup before restoring
+   
+   🚨 If unsure, contact your administrator! 🚨
+
+═══════════════════════════════════════════════════════════════
+
+📋 BACKUP SCHEDULE RECOMMENDATIONS:
+
+   Daily:   End of business day
+   Weekly:  Copy to external drive  
+   Monthly: Long-term archive
+
+═══════════════════════════════════════════════════════════════
+
+📖 For complete documentation, see:
+   BACKUP_RESTORE_GUIDE.md
+
+═══════════════════════════════════════════════════════════════

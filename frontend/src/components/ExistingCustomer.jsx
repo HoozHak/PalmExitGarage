@@ -205,12 +205,24 @@ function ExistingCustomer() {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'Estimate': return '#FFD329';
-      case 'Approved': return '#4CAF50';
-      case 'Started': return '#FF9800';
-      case 'Complete': return '#2196F3';
-      case 'Cancelled': return '#f44336';
-      default: return '#ccc';
+      case 'Estimate': return '#FFD329';      // Bright Yellow
+      case 'Approved': return '#4CAF50';      // Green
+      case 'Started': return '#FF9800';       // Orange
+      case 'Complete': return '#2196F3';      // Blue
+      case 'Cancelled': return '#F44336';     // Red
+      default: return '#999999';              // Gray
+    }
+  };
+  
+  const getStatusTextColor = (status) => {
+    // Return appropriate text color for each status background
+    switch (status) {
+      case 'Estimate': return '#000000';      // Black text on yellow
+      case 'Approved': return '#FFFFFF';      // White text on green
+      case 'Started': return '#FFFFFF';       // White text on orange
+      case 'Complete': return '#FFFFFF';      // White text on blue
+      case 'Cancelled': return '#FFFFFF';     // White text on red
+      default: return '#FFFFFF';              // White text on gray
     }
   };
 
@@ -843,14 +855,16 @@ function ExistingCustomer() {
                         <div>
                           <div style={{
                             backgroundColor: getStatusColor(order.status),
-                            color: order.status === 'Estimate' ? 'black' : 'white',
-                            padding: '4px 8px',
-                            borderRadius: '12px',
+                            color: getStatusTextColor(order.status),
+                            padding: '6px 12px',
+                            borderRadius: '14px',
                             fontSize: '12px',
                             fontWeight: 'bold',
                             textAlign: 'center',
                             textTransform: 'uppercase',
-                            width: 'fit-content'
+                            width: 'fit-content',
+                            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.3)',
+                            border: '1px solid rgba(255, 255, 255, 0.1)'
                           }}>
                             {order.status}
                           </div>

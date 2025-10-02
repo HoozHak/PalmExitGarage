@@ -4,6 +4,7 @@ const cors = require('cors');
 const dbConfig = require('./config/database');
 const emailService = require('./services/emailService');
 const configStore = require('./utils/configStore');
+const backupService = require('./services/backupService');
 require('dotenv').config();
 
 const app = express();
@@ -160,8 +161,7 @@ app.post('/api/vehicles', (req, res) => {
 // Get all parts
 app.get('/api/parts', (req, res) => {
     const query = `
-        SELECT *,
-               CASE WHEN quantity_on_hand > 0 THEN true ELSE false END as in_stock
+        SELECT *
         FROM parts 
         ORDER BY category, brand, item
     `;
@@ -1252,7 +1252,8 @@ app.post('/api/work-orders', (req, res) => {
         const work_order_id = result.insertId;
         let promises = [];
         
-        // Insert parts and deduct inventory if this is an approved work order
+        // Insert parts (but do NOT deduct inventory yet)
+        // Inventory will only be deducted when status changes from Estimate to Approved
         if (parts && parts.length > 0) {
             const partQuery = 'INSERT INTO work_order_parts (work_order_id, part_id, quantity, cost_cents) VALUES ?';
             const partValues = parts.map(p => [work_order_id, p.part_id, p.quantity, p.cost_cents]);
@@ -1263,26 +1264,7 @@ app.post('/api/work-orders', (req, res) => {
                 });
             }));
             
-            // If this work order is not just an estimate, deduct parts from inventory
-            // We'll check the is_estimate flag from the request body
-            const isEstimate = req.body.is_estimate || false;
-            if (!isEstimate) {
-                // Deduct inventory for each part
-                parts.forEach(part => {
-                    const inventoryQuery = 'UPDATE parts SET quantity_on_hand = GREATEST(0, quantity_on_hand - ?) WHERE part_id = ?';
-                    promises.push(new Promise((resolve, reject) => {
-                        db.query(inventoryQuery, [part.quantity, part.part_id], (err, result) => {
-                            if (err) {
-                                console.error(`Error deducting inventory for part ${part.part_id}:`, err);
-                                reject(err);
-                            } else {
-                                console.log(`Deducted ${part.quantity} units of part ${part.part_id} from inventory`);
-                                resolve();
-                            }
-                        });
-                    }));
-                });
-            }
+            console.log(`Work order #${work_order_id} created with ${parts.length} parts (inventory NOT deducted - will deduct when approved)`);
         }
         
         // Insert labor
@@ -2182,6 +2164,95 @@ app.post('/api/database/delete', (req, res) => {
                 });
             });
         }
+    });
+});
+
+// ===== BACKUP/RESTORE =====
+// Get list of all databases
+app.get('/api/backup/databases', async (req, res) => {
+    try {
+        const databases = await backupService.listDatabases();
+        res.json({ databases });
+    } catch (error) {
+        console.error('List databases error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Create backup of selected database
+app.post('/api/backup/create', async (req, res) => {
+    try {
+        const { database } = req.body;
+        
+        if (!database) {
+            return res.status(400).json({ error: 'Database name is required' });
+        }
+        
+        const result = await backupService.createBackup(database);
+        res.json({
+            message: `Backup created successfully for database '${database}'`,
+            ...result,
+            backupDirectory: backupService.getBackupDirectory()
+        });
+    } catch (error) {
+        console.error('Create backup error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// List all available backups
+app.get('/api/backup/list', (req, res) => {
+    try {
+        const backups = backupService.listBackups();
+        res.json({
+            backups,
+            backupDirectory: backupService.getBackupDirectory()
+        });
+    } catch (error) {
+        console.error('List backups error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Restore database from backup - DANGEROUS OPERATION
+app.post('/api/backup/restore', async (req, res) => {
+    try {
+        const { filename, confirmationKey } = req.body;
+        
+        // Security check - require confirmation
+        if (confirmationKey !== 'RESTORE_DANGER_CONFIRMED') {
+            return res.status(400).json({ error: 'Invalid confirmation key. Restore operation cancelled.' });
+        }
+        
+        if (!filename) {
+            return res.status(400).json({ error: 'Backup filename is required' });
+        }
+        
+        const result = await backupService.restoreBackup(filename);
+        res.json(result);
+    } catch (error) {
+        console.error('Restore backup error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Delete a backup file
+app.delete('/api/backup/:filename', async (req, res) => {
+    try {
+        const { filename } = req.params;
+        const result = await backupService.deleteBackup(filename);
+        res.json(result);
+    } catch (error) {
+        console.error('Delete backup error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get backup directory path
+app.get('/api/backup/directory', (req, res) => {
+    res.json({ 
+        backupDirectory: backupService.getBackupDirectory(),
+        message: 'Backup files are stored in this directory. You can manually copy them to external storage for safekeeping.'
     });
 });
 

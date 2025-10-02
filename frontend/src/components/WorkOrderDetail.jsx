@@ -189,12 +189,24 @@ function WorkOrderDetail({ workOrderId, onClose, onDeleted, onStatusChanged }) {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'Estimate': return '#FFD329';
-      case 'Approved': return '#4CAF50';
-      case 'Started': return '#FF9800';
-      case 'Complete': return '#2196F3';
-      case 'Cancelled': return '#f44336';
-      default: return '#ccc';
+      case 'Estimate': return '#FFD329';      // Bright Yellow
+      case 'Approved': return '#4CAF50';      // Green
+      case 'Started': return '#FF9800';       // Orange
+      case 'Complete': return '#2196F3';      // Blue
+      case 'Cancelled': return '#F44336';     // Red
+      default: return '#999999';              // Gray
+    }
+  };
+  
+  const getStatusTextColor = (status) => {
+    // Return appropriate text color for each status background
+    switch (status) {
+      case 'Estimate': return '#000000';      // Black text on yellow
+      case 'Approved': return '#FFFFFF';      // White text on green
+      case 'Started': return '#FFFFFF';       // White text on orange
+      case 'Complete': return '#FFFFFF';      // White text on blue
+      case 'Cancelled': return '#FFFFFF';     // White text on red
+      default: return '#FFFFFF';              // White text on gray
     }
   };
 
@@ -271,14 +283,16 @@ function WorkOrderDetail({ workOrderId, onClose, onDeleted, onStatusChanged }) {
           </h2>
           <div style={{
             backgroundColor: getStatusColor(workOrder.status),
-            color: workOrder.status === 'Estimate' ? 'black' : 'white',
-            padding: '6px 12px',
-            borderRadius: '12px',
+            color: getStatusTextColor(workOrder.status),
+            padding: '8px 16px',
+            borderRadius: '16px',
             fontSize: '14px',
             fontWeight: 'bold',
             textTransform: 'uppercase',
             width: 'fit-content',
-            marginBottom: '10px'
+            marginBottom: '10px',
+            boxShadow: '0 2px 6px rgba(0, 0, 0, 0.4)',
+            border: '2px solid rgba(255, 255, 255, 0.1)'
           }}>
             {workOrder.status}
           </div>
