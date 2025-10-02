@@ -108,6 +108,9 @@ node seed_autozone_parts.js
 
 # Seed labor services
 node seed_labor.js
+
+# Add test customer data (optional)
+node seed_test_data.js
 ```
 
 #### 5. Start Application
@@ -299,6 +302,40 @@ This provides:
 | **Wipers** | 4 | Bosch, Rain-X, Trico |
 
 **Pricing:** AutoZone business/professional pricing
+
+### Test Users (Pre-Loaded)
+
+The system includes 2 test customers for immediate testing and demonstration:
+
+#### Test Customer 1: John Doe
+- **Email:** john.doe@example.com
+- **Phone:** 555-0101
+- **Address:** 123 Main St, Austin, TX 78701
+- **Vehicle:** 2018 Honda Accord (Silver)
+  - VIN: 1HGCV1F30JA123456
+  - License: ABC1234
+  - Mileage: 45,000
+  - Engine: 2.0L Turbo
+  - Transmission: Automatic
+  - Notes: Regular maintenance customer
+
+#### Test Customer 2: Jane Smith
+- **Email:** jane.smith@example.com
+- **Phone:** 555-0102
+- **Address:** 456 Oak Ave, Austin, TX 78702
+- **Vehicle:** 2020 Toyota RAV4 (Blue)
+  - VIN: 2T3P1RFV8LC123789
+  - License: XYZ5678
+  - Mileage: 28,000
+  - Engine: 2.5L
+  - Transmission: Automatic
+  - Notes: New customer - first visit
+
+**To reseed test data:**
+```bash
+cd server
+node seed_test_data.js
+```
 
 ---
 

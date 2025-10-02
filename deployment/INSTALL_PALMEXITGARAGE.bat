@@ -118,9 +118,11 @@ echo.
 echo The application has been successfully installed with:
 echo   * 6,057+ Vehicle Models (2010-2025, all major brands)
 echo   * 88+ Professional Parts (AutoZone business pricing)
+echo   * 2 Test Customers (John Doe and Jane Smith) with vehicles
 echo   * Automatic inventory management with intelligent deduction system
 echo   * Complete work order and customer management system
 echo   * Professional email automation
+echo   * Database backup and restore capabilities
 echo   * Database management and administration tools
 echo.
 echo To start PalmExitGarage:

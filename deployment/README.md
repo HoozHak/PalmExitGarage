@@ -47,10 +47,11 @@ This installation package contains:
 ### Database Content
 - 6,057 Vehicle Models (2010-2025, all major manufacturers)
 - 88 Professional Parts (AutoZone business pricing) with inventory tracking
-- Sample Customer Data (4 customers, 4 vehicles)
+- 2 Test Customers with vehicles (John Doe, Jane Smith)
 - Labor Operations Catalog (10 common services)
 - Honda Crosstour Models (2010-2015, all variants)
 - Clean work order history (ready for production use)
+- Database backup and restore capabilities
 
 ---
 
@@ -100,12 +101,14 @@ Once started, PalmExitGarage will be available at:
 - **Categories**: Engine, Brakes, Suspension, Electrical, Fluids, Filters, Tools, and more
 - **Brands**: ACDelco, Bosch, Wagner, Monroe, Mobil 1, Interstate, and other quality brands
 
-### Sample Data
-- **4 Sample Customers** with complete contact information
-- **4 Sample Vehicles** associated with customers
+### Test Data
+- **2 Test Customers** with complete contact information:
+  - John Doe (2018 Honda Accord) - john.doe@example.com
+  - Jane Smith (2020 Toyota RAV4) - jane.smith@example.com
 - **10 Labor Operations** with realistic pricing and time estimates
 - **Clean Work Orders**: No existing work orders - ready for fresh start
 - **Inventory Management**: All parts properly tracked with quantity on hand
+- **Backup/Restore**: Full database backup and restore functionality
 
 ---
 

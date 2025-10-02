@@ -67,6 +67,17 @@ if %errorLevel% neq 0 (
 
 echo Database setup completed successfully!
 echo.
+
+:: Seed test customer data
+echo Adding test customer data for demonstration...
+cd ..
+node server\seed_test_data.js
+if %errorLevel% neq 0 (
+    echo WARNING: Failed to seed test data, but continuing...
+)
+cd deployment
+echo.
+
 echo ================================================================
 echo    PalmExitGarage Professional Database Ready!
 echo ================================================================
@@ -75,5 +86,10 @@ docker exec palmexitgarage-db mysql -u root -pexample palmexitgarage -e "SELECT 
 echo.
 echo Verifying Honda Crosstour availability...
 docker exec palmexitgarage-db mysql -u root -pexample palmexitgarage -e "SELECT COUNT(*) as honda_crosstour_models FROM vehicle_reference WHERE make = 'Honda' AND model LIKE '%Crosstour%';" 2>nul
+echo.
+echo Test customers added:
+echo   - John Doe (2018 Honda Accord) - john.doe@example.com
+echo   - Jane Smith (2020 Toyota RAV4) - jane.smith@example.com
+echo.
 
 exit /b 0
