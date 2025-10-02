@@ -70,7 +70,7 @@ echo PalmExitGarage Portable Installation Package > "%DEST_DIR%\PACKAGE_INFO.txt
 echo ============================================= >> "%DEST_DIR%\PACKAGE_INFO.txt"
 echo. >> "%DEST_DIR%\PACKAGE_INFO.txt"
 echo Package Created: %DATE% %TIME% >> "%DEST_DIR%\PACKAGE_INFO.txt"
-echo Package Version: 1.0.0 >> "%DEST_DIR%\PACKAGE_INFO.txt"
+echo Package Version: 1.1.0 >> "%DEST_DIR%\PACKAGE_INFO.txt"
 echo. >> "%DEST_DIR%\PACKAGE_INFO.txt"
 echo INSTALLATION INSTRUCTIONS: >> "%DEST_DIR%\PACKAGE_INFO.txt"
 echo 1. Copy this entire folder to the target computer >> "%DEST_DIR%\PACKAGE_INFO.txt"
@@ -96,9 +96,12 @@ echo CONTENTS SUMMARY:
 echo - PalmExitGarage Frontend (React application)
 echo - PalmExitGarage Backend (Node.js server)
 echo - Docker configuration files
-echo - Complete database backup (6,057 vehicles, 88 parts)
+echo - Complete database backup (6,057 vehicles, 88 parts, 2 test customers)
+echo - Database backup and restore system
 echo - Installation scripts (Node.js, Docker Desktop)
 echo - Startup/shutdown scripts
+echo - Color-coded work order status system
+echo - Smart inventory management with auto-deduction
 echo - Complete documentation
 echo.
 echo FLASH DRIVE INSTRUCTIONS:
