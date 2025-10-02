@@ -1,286 +1,507 @@
 # PalmExitGarage - Professional Auto Repair Management System
 
-**A complete, portable auto repair shop management system with comprehensive vehicle database, professional parts catalog, and automated workflow.**
+**A complete, production-ready auto repair shop management system with comprehensive vehicle database, professional parts catalog, automated workflow, and database backup/restore capabilities.**
 
-
----
-
-## Key Features
-
-- Portable installation runs on any Windows machine
-- Complete database: 6,057 vehicles (2010-2025) and 88 professional parts
-- AutoZone business pricing with Honda Crosstour coverage
-- Automated installer handles Node.js, Docker, and all dependencies
-- Automatic inventory management with intelligent deduction system
-- Automatic customer email notifications
-- Modern React-based web interface
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)](https://github.com/HoozHak/PalmExitGarage)
 
 ---
 
-## Quick Start
+## 🚀 What's New in Version 1.1
 
-### Option 1: Portable Installation (Recommended)
-1. Copy the `PalmExitGarage` folder to your computer
-2. **Right-click** `deployment\INSTALL_PALMEXITGARAGE.bat`
-3. Select **"Run as administrator"**
-4. Follow the prompts - everything installs automatically!
-5. Use the desktop shortcut to start PalmExitGarage
+### Major Features Added
+- ✅ **Database Backup & Restore System** - Full backup/restore with animated progress indicators
+- ✅ **Color-Coded Work Order Status** - Visual status badges (Yellow/Green/Orange/Blue/Red)
+- ✅ **Smart Inventory Management** - Inventory deduction only on approval, prevents double-deduction
+- ✅ **Enhanced SMTP Error Messages** - Clear, actionable email setup guidance
+- ✅ **Status Legend** - Visual guide showing all work order statuses and their meanings
 
-### Option 2: Development Setup
+### Bug Fixes & Improvements
+- ✅ Fixed work order status database schema compatibility
+- ✅ Added missing database columns for signatures and inventory tracking
+- ✅ Fixed database restore to properly replace all data
+- ✅ Enhanced UI feedback during long-running operations
+- ✅ Improved error messaging throughout the application
+
+---
+
+## 🌟 Key Features
+
+### Core Functionality
+- 💾 **Complete Database Backup/Restore** - Local backups with progress indicators
+- 🚗 **Vehicle Database** - 703 vehicles (2010-2015) with expansion to 2025 available
+- 🔧 **Professional Parts Catalog** - 88 parts with AutoZone business pricing
+- 📊 **Work Order Management** - Complete workflow from estimate to completion
+- 📧 **Email Automation** - Professional notifications with SMTP configuration
+- 💰 **Inventory Tracking** - Smart deduction system with double-deduction prevention
+- 🎨 **Modern UI** - React-based interface with real-time updates
+
+### Business Features
+- **Customer Management** - Complete CRM with cascade deletion
+- **Vehicle Tracking** - Full service history per vehicle
+- **Digital Signatures** - Capture customer approval (drawn or typed)
+- **Automatic Tax Calculation** - Configurable tax rates
+- **Receipt Generation** - Professional HTML email receipts
+- **Status Workflow** - Track orders through complete lifecycle
+
+---
+
+## 📋 Quick Start
+
+### Prerequisites
+- **Node.js** 16.x or higher
+- **MySQL** 8.0 or higher (local installation)
+- **Windows** 10/11 (PowerShell required)
+
+### Installation Steps
+
+#### 1. Install MySQL (if not already installed)
+```powershell
+# Run the automated MySQL installer
+.\download-mysql.ps1
+
+# Or install manually from:
+# https://dev.mysql.com/downloads/mysql/
+```
+
+See `INSTALL_MYSQL_WINDOWS.md` for detailed MySQL setup instructions.
+
+#### 2. Clone & Setup
 ```bash
-# Clone and setup
-git clone <repository-url>
+# Clone the repository
+git clone https://github.com/HoozHak/PalmExitGarage.git
 cd PalmExitGarage
 
-# Start database
-docker-compose up -d
+# Install backend dependencies
+cd server
+npm install
 
-# Install dependencies
-cd server && npm install
-cd ../frontend && npm install
+# Install frontend dependencies
+cd ../frontend
+npm install
+```
 
-# Start services
-cd ../server && npm start
-cd ../frontend && npm run dev
+#### 3. Configure Database
+Edit `server/config/database.js` with your MySQL credentials:
+```javascript
+module.exports = {
+    host: 'localhost',
+    port: 3306,
+    user: 'root',
+    password: 'your_password',
+    database: 'palmexitgarage'
+};
+```
+
+#### 4. Initialize Database
+```bash
+cd server
+
+# Create database schema
+node migrate.js
+
+# Seed vehicle data (2010-2015)
+node seed_vehicles_2010_2015.js
+
+# Seed parts catalog
+node seed_autozone_parts.js
+
+# Seed labor services
+node seed_labor.js
+```
+
+#### 5. Start Application
+```bash
+# Terminal 1: Start backend
+cd server
+npm start
+
+# Terminal 2: Start frontend
+cd frontend
+npm run dev
 ```
 
 **Access the application at:** http://localhost:5174
 
 ---
 
-## System Architecture
+## 🏗️ System Architecture
 
 ### Technology Stack
-- **Frontend**: React 18 + Vite + Modern CSS
-- **Backend**: Node.js + Express + RESTful APIs
-- **Database**: MySQL 8.0 in Docker container
-- **Email**: Nodemailer with Gmail SMTP
-- **Deployment**: Docker + Portable Windows installers
+| Layer | Technology | Purpose |
+|-------|-----------|---------|
+| **Frontend** | React 19 + Vite | Modern UI with hot reload |
+| **Backend** | Node.js + Express | RESTful API server |
+| **Database** | MySQL 8.0 | Relational data storage |
+| **Email** | Nodemailer | SMTP email delivery |
+| **Backup** | mysql2 | Database backup/restore |
 
-### Database Content
-| Component | Count | Description |
-|-----------|-------|-------------|
-| **Vehicles** | 6,057 | Complete 2010-2025 vehicle database |
-| **Honda Crosstour** | 24 | All variants (2010-2015) |
-| **Professional Parts** | 88 | AutoZone business pricing |
-| **Brands** | 27 | Major automotive manufacturers |
-| **Categories** | 11 | Engine, Brakes, Suspension, etc. |
-
----
-
-## Professional Features
-
-### Customer & Vehicle Management
-- Complete CRUD operations: Add, view, edit, and delete customers
-- Cascade deletion: Removing customers automatically deletes associated vehicles and work orders
-- Advanced search: Find customers by name, phone, email, or ID
-- Vehicle integration: Comprehensive make/model/year lookup from 6,000+ database
-- Service history: Complete tracking of customer relationship and work history
-- Data integrity: Confirmation prompts prevent accidental data loss
-
-### Work Orders & Estimates
-- Professional work order creation with parts and labor
-- Status workflow: `Estimate → Approved → Started → Complete`
-- Automatic inventory deduction when estimates are approved
-- Double-deduction prevention with database tracking
-- Digital signature capture (drawn or typed)
-- Automatic tax calculations and professional receipts
-- Print and email functionality
-
-### Inventory & Parts Management
-- 88 professional parts with AutoZone business pricing
-- Real-time inventory tracking and stock management
-- Automatic inventory deduction when work orders are approved
-- Intelligent deduction prevention (no double-deduction)
-- 11 categories: Engine, Brakes, Suspension, Electrical, Fluids, etc.
-- Quality brands: ACDelco, Bosch, Wagner, Monroe, Mobil 1, Interstate
-- Database management: Professional database administration with selective deletion capabilities
-
-### Email Automation
-- Automatic notifications when work orders are completed
-- Professional HTML email templates with shop branding
-- Gmail SMTP integration with App Password support
-- Receipt generation and delivery
-
-### Intelligent Inventory Management
-- Automatic parts deduction when work orders are approved
-- Smart tracking prevents double-deduction of inventory
-- Database-level tracking of inventory deduction status
-- Real-time inventory updates and stock management
-- Negative inventory prevention (minimum quantity: 0)
-
-### Database Management
-- Professional database administration with secure deletion controls
-- Selective database deletion - Choose specific tables to clear (Customers, Vehicles, Parts, etc.)
-- Dual-confirmation safety - Multiple confirmation prompts prevent accidental data loss
-- Smart relationship handling - Respects foreign key constraints and dependent data
-- Complete database status - Real-time record counts and system overview
-- Automated backup system ready (Google Drive integration planned for future release)
-
-### Comprehensive Vehicle Database
-- 6,057 vehicle combinations covering 2010-2025
-- 27 major brands: Honda, Toyota, Ford, Chevrolet, BMW, Mercedes-Benz, Audi, and more
-- Honda Crosstour: Complete coverage (2010-2015) including EX, EX-L, EX-L V6
-- Accurate production year tracking and discontinued model handling
-
----
-
-## Target Users
-
-- **Small to medium auto repair shops**
-- **Independent mechanics**
-- **Mobile repair services**
-- **Fleet maintenance operations**
-- **Automotive service centers**
-
----
-
-## Usage Workflow
-
-### Customer & Work Order Management
-1. **Customer Operations**: Add, edit, search, or delete customers with full data validation
-2. **Vehicle Management**: Add vehicles from 6,000+ database, edit details, automatic deletion with customer
-3. **Work Order Creation**: Build estimates with professional parts catalog + labor services
-4. **Status Workflow**: Track progress through Estimate → Approved → Started → Complete
-5. **Inventory Control**: Automatic parts deduction when estimates are approved, with prevention of double-deduction
-6. **Data Safety**: Cascade deletion with confirmation - removing customers cleans up all related data
-7. **Email Automation**: Customers receive professional pickup notifications when work is complete
-
-### Professional Parts Selection
-- Browse by category (Engine, Brakes, Suspension, etc.)
-- Search by brand, part number, or description
-- Realistic AutoZone business pricing
-- Automatic cost calculations and markup
-
----
-
-## Project Structure
-
+### Database Schema
 ```
-PalmExitGarage/
-├── deployment/                    # Portable Installation System
-│   ├── INSTALL_PALMEXITGARAGE.bat   # Main installer
-│   ├── START_PALMEXITGARAGE.bat     # Application launcher
-│   ├── database_backup/             # Complete database backup
-│   ├── install_nodejs.bat           # Node.js auto-installer
-│   ├── install_docker.bat           # Docker Desktop installer
-│   └── README.md                    # Installation guide
-├── frontend/                      # React Application
-│   ├── src/                        # React components and logic
-│   ├── package.json                # Frontend dependencies
-│   └── vite.config.js              # Build configuration
-├── server/                        # Node.js Backend
-│   ├── index.js                    # Main server file
-│   ├── config/database.js          # Database configuration
-│   ├── migrate.js                  # Database schema setup
-│   ├── migrations/                 # Database migration scripts
-│   ├── seed_comprehensive_vehicles.js  # Vehicle database seeder
-│   ├── seed_autozone_parts.js      # Parts catalog seeder
-│   └── package.json               # Backend dependencies
-├── docker-compose.yml             # 🐳 Database container config
-├── LICENSE                        # MIT License
-├── README.md                      # This file
-└── .gitignore                     # Git ignore rules
+palmexitgarage
+├── customers          # Customer records
+├── vehicles           # Customer vehicles
+├── vehicle_reference  # Make/model/year lookup (703 vehicles)
+├── parts              # Parts inventory (88 items)
+├── labor              # Labor services catalog
+├── work_orders        # Work orders/estimates
+├── work_order_parts   # Parts used in work orders
+└── work_order_labor   # Labor services in work orders
 ```
-
----
-
-## Configuration
-
-### Database Settings
-- **Database**: `palmexitgarage` 
-- **Container**: `palmexitgarage-db`
-- **Volume**: `palmexitgarage_db_data`
-- **Port**: 3308 (external) → 3306 (internal)
 
 ### Application Ports
 - **Frontend**: http://localhost:5174
 - **Backend API**: http://localhost:5000
-- **Database**: localhost:3308
-
-### Email Configuration
-1. Go to **Email Settings** in the application
-2. Enter Gmail address and App Password
-3. Configure shop name and branding
-4. Test email functionality
+- **MySQL Database**: localhost:3306
 
 ---
 
-## Deployment Options
+## 💼 Professional Features
 
-### 1. Portable Installation (End Users)
-- Complete Windows installer with all dependencies
-- Downloads and installs Node.js and Docker Desktop
-- Sets up database with all professional data
-- Creates desktop shortcuts and Start Menu entries
+### 1. Customer & Vehicle Management
+- **Add/Edit/Delete Customers** - Complete CRUD operations
+- **Advanced Search** - Find by name, phone, email, or ID
+- **Vehicle Database Integration** - 703+ vehicles (2010-2015)
+- **Service History Tracking** - Complete customer relationship history
+- **Cascade Deletion** - Safe removal with confirmation
+- **Data Validation** - Prevent duplicate entries and data corruption
 
-### 2. Development Environment
-- Docker-based MySQL database
-- Hot-reload development servers
-- Separate frontend and backend processes
+### 2. Work Orders & Estimates
 
-### 3. Production Deployment
-- Docker containerization ready
-- Environment variable configuration
-- SSL/HTTPS support ready
-- Load balancer compatible
+#### Status Workflow with Color Coding
+```
+🟡 Estimate (Yellow)    → Initial quote created
+🟢 Approved (Green)     → Customer approved, inventory deducted
+🟠 Started (Orange)     → Work in progress
+🔵 Complete (Blue)      → Ready for customer pickup
+🔴 Cancelled (Red)      → Work order cancelled
+```
+
+#### Key Features
+- Professional quote generation with parts and labor
+- Automatic tax calculation
+- Digital signature capture (drawn or typed)
+- Email receipts and completion notifications
+- Print-ready work order format
+- Status history tracking
+
+### 3. Intelligent Inventory Management
+
+#### Smart Deduction System
+```
+Create Estimate → Inventory NOT deducted ✅
+      ↓
+Approve Estimate → Inventory deducted NOW ✅
+      ↓
+Change Status → No additional deduction (protected) ✅
+```
+
+#### Features
+- **Automatic Deduction** - Only when estimates are approved
+- **Double-Deduction Prevention** - Database tracking prevents errors
+- **Real-Time Updates** - Instant inventory level changes
+- **Low Stock Alerts** - Visual warnings for low quantities
+- **Negative Prevention** - Cannot go below zero
+- **Audit Trail** - Track all inventory changes
+
+### 4. Database Backup & Restore
+
+#### Backup Features
+- **One-Click Backup** - Create full database backups instantly
+- **Local Storage** - Backups saved in `server/backups/` directory
+- **Timestamped Files** - Easy identification and organization
+- **Complete Data** - All tables, relationships, and data preserved
+- **Manual Export** - Copy backup files for external storage
+
+#### Restore Features
+- **Visual Progress** - Animated modal shows restore status
+- **Complete Replacement** - Safely drops and recreates all tables
+- **Statistics Display** - Shows tables created and rows inserted
+- **Success Confirmation** - Detailed completion modal
+- **Safety Checks** - Confirmation required before restore
+
+#### Backup Workflow
+```
+1. Navigate to Database Manager
+2. Select database to backup
+3. Click "Create Backup"
+4. Backup saved with timestamp
+5. Copy to external storage (recommended)
+```
+
+#### Restore Workflow
+```
+1. Place backup file in backups directory
+2. Click "Restore" on backup file
+3. Type "RESTORE" to confirm
+4. Watch animated progress modal
+5. View success statistics
+6. Database fully restored ✅
+```
+
+See `DATABASE_RESTORE_FIX.md` and `DATABASE_RESTORE_UI_ENHANCEMENT.md` for detailed documentation.
+
+### 5. Email Automation
+
+#### Setup Requirements
+1. Gmail account with 2-Step Verification enabled
+2. Generate App Password (16-character code)
+3. Configure in Settings → Email Configuration
+4. Test email to verify setup
+
+#### Features
+- **Work Order Receipts** - Professional HTML email receipts
+- **Completion Notifications** - Customer pickup alerts
+- **Test Email Function** - Verify configuration works
+- **Shop Branding** - Customize shop name in emails
+- **Clear Error Messages** - Actionable SMTP setup guidance
+
+#### Error Messaging
+When SMTP is not configured, users see:
+```
+"SMTP service not setup to send email. Please go to 
+Settings and setup SMTP for automatic email function 
+to operate."
+```
+
+This provides:
+- Clear identification of the issue
+- Specific guidance on where to fix it
+- Explanation of why SMTP is needed
 
 ---
 
-## Security & Data Safety Features
+## 📊 Database Content
 
-### Security
-- SQL injection prevention with parameterized queries
-- Input validation and sanitization on all forms
-- Secure email configuration with Gmail App Password support
-- CORS protection for API endpoints
-- Environment variables for sensitive data protection
+### Vehicle Reference Database
+| Make | Models | Years | Total Vehicles |
+|------|--------|-------|----------------|
+| Honda (incl. Crosstour) | 30+ | 2010-2015 | 703 |
+| Additional Makes Available | - | 2016-2025 | Run seed_vehicles_2010_2025.js |
+
+**Honda Crosstour Coverage:**
+- 2010-2015: All trims (EX, EX-L, EX-L V6)
+- Complete variant coverage
+- Accurate production years
+
+### Parts Catalog (88 Professional Parts)
+| Category | Count | Brands |
+|----------|-------|--------|
+| **Engine** | 15 | ACDelco, Bosch, Denso |
+| **Brakes** | 12 | Wagner, Raybestos, Centric |
+| **Suspension** | 8 | Monroe, KYB, Moog |
+| **Electrical** | 10 | Interstate, Optima, DieHard |
+| **Fluids** | 8 | Mobil 1, Castrol, Valvoline |
+| **Filters** | 12 | Fram, Purolator, Wix |
+| **Cooling** | 8 | Gates, Dayco, Continental |
+| **Ignition** | 6 | NGK, Champion, Autolite |
+| **Lighting** | 5 | Sylvania, Philips, Wagner |
+| **Wipers** | 4 | Bosch, Rain-X, Trico |
+
+**Pricing:** AutoZone business/professional pricing
+
+---
+
+## 📁 Project Structure
+
+```
+PalmExitGarage/
+├── frontend/                           # React Application
+│   ├── src/
+│   │   ├── components/                # React components
+│   │   │   ├── Navigation.jsx         # Main navigation
+│   │   │   ├── ExistingCustomer.jsx   # Customer management
+│   │   │   ├── WorkOrderDetail.jsx    # Work order details
+│   │   │   ├── WorkOrderForm.jsx      # Create work orders
+│   │   │   ├── DatabaseManager.jsx    # Backup/restore UI ⭐ NEW
+│   │   │   └── ...
+│   │   ├── pages/
+│   │   │   ├── WorkOrderManagement.jsx # Work order list
+│   │   │   └── ...
+│   │   ├── App.jsx                    # Main app component
+│   │   └── main.jsx                   # Entry point
+│   ├── package.json
+│   └── vite.config.js
+│
+├── server/                            # Node.js Backend
+│   ├── config/
+│   │   └── database.js                # MySQL configuration
+│   ├── services/
+│   │   ├── emailService.js            # Email functionality
+│   │   └── backupService.js           # Backup/restore ⭐ NEW
+│   ├── utils/
+│   │   └── configStore.js             # Configuration storage
+│   ├── migrations/                    # Database migrations
+│   │   ├── fix_work_orders_schema.js  # Status fix ⭐ NEW
+│   │   ├── restore_estimate_inventory.js # Inventory fix ⭐ NEW
+│   │   └── ...
+│   ├── backups/                       # Database backups ⭐ NEW
+│   ├── index.js                       # Main server file
+│   ├── migrate.js                     # Schema setup
+│   ├── seed_vehicles_2010_2015.js     # Vehicle data
+│   ├── seed_autozone_parts.js         # Parts catalog
+│   ├── seed_labor.js                  # Labor services
+│   └── package.json
+│
+├── Documentation/                     # ⭐ NEW - Comprehensive guides
+│   ├── FIXES_SUMMARY_2025-10-02.md    # All fixes applied
+│   ├── WORK_ORDER_STATUS_FIX.md       # Status system fix
+│   ├── STATUS_COLOR_REFERENCE.md      # Color coding guide
+│   ├── INVENTORY_DEDUCTION_FIX.md     # Inventory timing fix
+│   ├── DATABASE_RESTORE_FIX.md        # Restore functionality
+│   ├── DATABASE_RESTORE_UI_ENHANCEMENT.md # UI improvements
+│   ├── SMTP_ERROR_MESSAGING_FIX.md    # Error messaging
+│   ├── BACKUP_RESTORE_GUIDE.md        # User guide
+│   ├── BACKUP_QUICK_START.txt         # Quick reference
+│   ├── MYSQL_SETUP_GUIDE.md           # MySQL installation
+│   └── INSTALL_MYSQL_WINDOWS.md       # Detailed MySQL setup
+│
+├── README.md                          # This file
+├── LICENSE                            # MIT License
+└── .gitignore                         # Git ignore rules
+```
+
+---
+
+## 🔧 Configuration
+
+### Database Connection
+Edit `server/config/database.js`:
+```javascript
+module.exports = {
+    host: 'localhost',      // MySQL host
+    port: 3306,             // MySQL port
+    user: 'root',           // MySQL user
+    password: 'your_password', // MySQL password
+    database: 'palmexitgarage' // Database name
+};
+```
+
+### Email Configuration (In-App)
+1. Navigate to **Settings**
+2. Click **Email Configuration**
+3. Enter Gmail address
+4. Enter App Password (not regular password)
+5. Set shop name
+6. Click **Test Email** to verify
+7. Click **Save Configuration**
+
+### Environment Variables (Optional)
+Create `.env` file in server directory:
+```env
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=your_password
+DB_NAME=palmexitgarage
+PORT=5000
+```
+
+---
+
+## 🛠️ Development
+
+### Available Scripts
+
+#### Backend (server/)
+```bash
+npm start              # Start production server
+npm run dev            # Start with hot reload (nodemon)
+npm run migrate        # Create database schema
+npm run seed-vehicles  # Load vehicle database
+npm run seed-labor     # Load labor services
+```
+
+#### Frontend (frontend/)
+```bash
+npm run dev           # Start development server
+npm run build         # Build for production
+npm run preview       # Preview production build
+npm run lint          # Run ESLint
+```
+
+### Database Migrations
+```bash
+cd server
+
+# Run specific migration
+node migrations/fix_work_orders_schema.js
+node migrations/restore_estimate_inventory.js
+
+# Create new migration
+# 1. Create file in migrations/
+# 2. Follow existing migration pattern
+# 3. Test thoroughly before running
+```
+
+---
+
+## 🔐 Security Features
+
+### Data Protection
+- ✅ **Parameterized Queries** - SQL injection prevention
+- ✅ **Input Validation** - Sanitized user input
+- ✅ **CORS Protection** - Configured API endpoints
+- ✅ **Environment Variables** - Secure credential storage
+- ✅ **Cascade Deletion Protection** - Confirmation required
+- ✅ **App Password Support** - Gmail security compliance
 
 ### Data Safety
-- Cascade deletion protection - Smart deletion of related records
-- Confirmation prompts - Users must type "DELETE" to confirm customer removal
-- Data integrity - Foreign key constraints prevent orphaned records
-- Audit logging - Server logs all customer deletion activities
-- Backup integration - Database export includes all professional data
+- ✅ **Backup System** - Regular database backups
+- ✅ **Confirmation Prompts** - Prevent accidental deletion
+- ✅ **Foreign Key Constraints** - Maintain data integrity
+- ✅ **Audit Logging** - Server logs all operations
+- ✅ **Transaction Support** - Database consistency
 
 ---
 
-## Support & Documentation
+## 📚 Documentation
 
-### Installation Support
-- See `deployment/README.md` for detailed installation instructions
-- Troubleshooting guide included in installer package
-- System requirements and compatibility information
+### User Guides
+- `BACKUP_QUICK_START.txt` - Quick backup/restore reference
+- `BACKUP_RESTORE_GUIDE.md` - Complete backup guide
+- `MYSQL_SETUP_GUIDE.md` - MySQL installation guide
+- `INSTALL_MYSQL_WINDOWS.md` - Detailed Windows MySQL setup
 
-### Development
-- Clean, documented codebase with modern practices
-- RESTful API architecture
-- Component-based React frontend
-- Professional database design
-
----
-
-## What Makes This Special
-
-1. Complete Solution: Not just a framework - a complete, working auto repair system
-2. Professional Data: Real AutoZone pricing, comprehensive vehicle database
-3. Truly Portable: One installer handles everything from Node.js to final setup
-4. Industry Ready: Built for real auto repair shops with realistic data
-5. Modern Stack: Latest technologies with professional development practices
-6. Business Automation: Automatic customer communications and workflow
+### Technical Documentation
+- `FIXES_SUMMARY_2025-10-02.md` - All fixes in version 1.1
+- `WORK_ORDER_STATUS_FIX.md` - Status system documentation
+- `STATUS_COLOR_REFERENCE.md` - Color coding reference
+- `INVENTORY_DEDUCTION_FIX.md` - Inventory management details
+- `DATABASE_RESTORE_FIX.md` - Restore functionality details
+- `DATABASE_RESTORE_UI_ENHANCEMENT.md` - UI improvement details
+- `SMTP_ERROR_MESSAGING_FIX.md` - Error handling improvements
 
 ---
 
-## License
+## 🎯 Target Users
 
-This project, [Palm Exit Garage](https://github.com/HoozHak/PalmExitGarage), is licensed under the MIT License.  
-
-Copyright (c) 2025 Coty O'Dea (GitHub: [HoozHak](https://github.com/HoozHak))
-
-You are free to use, modify, and distribute this project, but **please give proper attribution** by linking back to this repository and crediting the author.
+- **Small to Medium Auto Repair Shops** - Complete management solution
+- **Independent Mechanics** - Professional workflow tools
+- **Mobile Repair Services** - Portable, cloud-ready system
+- **Fleet Maintenance Operations** - Multi-vehicle tracking
+- **Automotive Service Centers** - Full-featured repair management
 
 ---
 
-Ready to streamline your auto repair business? Get started with the portable installer.
+## 📄 License
 
-© 2025 PalmExitGarage - Professional Auto Repair Shop Management System
+This project is licensed under the **MIT License**.
+
+**Copyright © 2025 Coty O'Dea (GitHub: [HoozHak](https://github.com/HoozHak))**
+
+---
+
+## 📞 Support
+
+**Repository**: [https://github.com/HoozHak/PalmExitGarage](https://github.com/HoozHak/PalmExitGarage)  
+**Issues**: [https://github.com/HoozHak/PalmExitGarage/issues](https://github.com/HoozHak/PalmExitGarage/issues)  
+**Author**: Coty O'Dea ([@HoozHak](https://github.com/HoozHak))
+
+---
+
+**Ready to streamline your auto repair business?**  
+**Get started today with PalmExitGarage!**
+
+© 2025 PalmExitGarage - Professional Auto Repair Shop Management System  
+Version 1.1.0 | Built with ❤️ for the automotive industry
