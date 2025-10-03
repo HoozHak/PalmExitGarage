@@ -13,7 +13,7 @@ PREREQUISITES
 
 Before starting, ensure you have:
   ✓ Node.js installed (version 16.x or higher)
-  ✓ MySQL 8.0.x installed (any version from 8.0.35 to 8.0.43)
+  ✓ MySQL installed (8.0.x recommended, but other versions work too)
   ✓ MySQL root password (you'll need this!)
   ✓ Administrator access to your computer
 

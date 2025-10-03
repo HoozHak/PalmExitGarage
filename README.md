@@ -50,17 +50,15 @@
 
 ### Prerequisites
 - **Node.js** 16.x or higher (Node.js 20.x LTS recommended)
-- **MySQL 8.0.x** (local installation)
-  - ⚠️ **Supported versions:** MySQL 8.0.35 through 8.0.40
-  - ⚠️ **NOT compatible with:** MySQL 8.4.x, MySQL 9.x, or Innovation releases
-  - **Recommended:** MySQL 8.0.40 (latest stable 8.0.x LTS version)
+- **MySQL** (local installation)
+  - ⚠️ **Recommended:** MySQL 8.0.x (8.0.35 or higher)
+  - ℹ️ **Also works with:** MySQL 8.4.x, MySQL 9.x, and other versions
+  - The application is compatible with most MySQL versions
 - **Windows** 10/11 (PowerShell required)
 
 ### Installation Steps
 
 #### 1. Install MySQL (if not already installed)
-
-⚠️ **CRITICAL: Install MySQL 8.0.x ONLY (NOT 8.4.x or 9.x)**
 
 **Option A - Automated Installation (Recommended):**
 ```powershell
@@ -70,15 +68,14 @@
 
 **Option B - Manual Installation:**
 1. Go to: https://dev.mysql.com/downloads/installer/
-2. Download **MySQL Installer 8.0.40** (or latest 8.0.x version)
-   - Click "Looking for previous GA versions?" if 8.0.x is not on main page
+2. Download **MySQL Installer** (8.0.x recommended, but other versions work too)
 3. During installation:
    - Choose **"Developer Default"** or **"Server only"**
    - Set **root password** (WRITE THIS DOWN!)
    - Keep port as **3306**
    - Enable "Start MySQL at System Startup"
 
-See `INSTALL_MYSQL_WINDOWS.md` for detailed step-by-step MySQL setup instructions.
+See `docs/INSTALL_MYSQL_WINDOWS.md` for detailed step-by-step MySQL setup instructions.
 
 #### 2. Clone & Setup
 ```bash
@@ -394,7 +391,8 @@ PalmExitGarage/
 │   ├── seed_labor.js                  # Labor services
 │   └── package.json
 │
-├── Documentation/                     # ⭐ NEW - Comprehensive guides
+├── docs/                              # ⭐ Comprehensive Documentation
+│   ├── README.md                      # Documentation index
 │   ├── FIXES_SUMMARY_2025-10-02.md    # All fixes applied
 │   ├── WORK_ORDER_STATUS_FIX.md       # Status system fix
 │   ├── STATUS_COLOR_REFERENCE.md      # Color coding guide
@@ -405,7 +403,9 @@ PalmExitGarage/
 │   ├── BACKUP_RESTORE_GUIDE.md        # User guide
 │   ├── BACKUP_QUICK_START.txt         # Quick reference
 │   ├── MYSQL_SETUP_GUIDE.md           # MySQL installation
-│   └── INSTALL_MYSQL_WINDOWS.md       # Detailed MySQL setup
+│   ├── INSTALL_MYSQL_WINDOWS.md       # Detailed MySQL setup
+│   ├── MANUAL_INSTALLATION_GUIDE.txt  # Manual install guide
+│   └── CHANGELOG.md                   # Project changelog
 │
 ├── README.md                          # This file
 ├── LICENSE                            # MIT License
@@ -508,20 +508,29 @@ node migrations/restore_estimate_inventory.js
 
 ## 📚 Documentation
 
-### User Guides
-- `BACKUP_QUICK_START.txt` - Quick backup/restore reference
-- `BACKUP_RESTORE_GUIDE.md` - Complete backup guide
-- `MYSQL_SETUP_GUIDE.md` - MySQL installation guide
-- `INSTALL_MYSQL_WINDOWS.md` - Detailed Windows MySQL setup
+All documentation has been organized in the `docs/` folder. See `docs/README.md` for a complete table of contents.
 
-### Technical Documentation
-- `FIXES_SUMMARY_2025-10-02.md` - All fixes in version 1.1
-- `WORK_ORDER_STATUS_FIX.md` - Status system documentation
-- `STATUS_COLOR_REFERENCE.md` - Color coding reference
-- `INVENTORY_DEDUCTION_FIX.md` - Inventory management details
-- `DATABASE_RESTORE_FIX.md` - Restore functionality details
-- `DATABASE_RESTORE_UI_ENHANCEMENT.md` - UI improvement details
-- `SMTP_ERROR_MESSAGING_FIX.md` - Error handling improvements
+### Quick Links
+
+**Installation & Setup:**
+- `docs/INSTALL_MYSQL_WINDOWS.md` - Detailed Windows MySQL setup
+- `docs/MANUAL_INSTALLATION_GUIDE.txt` - Manual installation guide
+- `docs/MYSQL_SETUP_GUIDE.md` - MySQL configuration guide
+- `docs/QUICK_START_COMMANDS.txt` - Quick reference commands
+
+**User Guides:**
+- `docs/BACKUP_QUICK_START.txt` - Quick backup/restore reference
+- `docs/BACKUP_RESTORE_GUIDE.md` - Complete backup guide
+
+**Technical Documentation:**
+- `docs/FIXES_SUMMARY_2025-10-02.md` - All fixes in version 1.1
+- `docs/WORK_ORDER_STATUS_FIX.md` - Status system documentation
+- `docs/STATUS_COLOR_REFERENCE.md` - Color coding reference
+- `docs/INVENTORY_DEDUCTION_FIX.md` - Inventory management details
+- `docs/DATABASE_RESTORE_FIX.md` - Restore functionality details
+- `docs/DATABASE_RESTORE_UI_ENHANCEMENT.md` - UI improvement details
+- `docs/SMTP_ERROR_MESSAGING_FIX.md` - Error handling improvements
+- `docs/CHANGELOG.md` - Project changelog
 
 ---
 

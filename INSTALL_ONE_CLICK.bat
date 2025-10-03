@@ -92,29 +92,33 @@ echo.
 :: Detect MySQL installation
 set MYSQL_PATH=
 
-if exist "C:\Program Files\MySQL\MySQL Server 9.1\bin\mysql.exe" (
-    set MYSQL_PATH="C:\Program Files\MySQL\MySQL Server 9.1\bin\mysql.exe"
-    echo Found MySQL Server 9.1
-) else if exist "C:\Program Files\MySQL\MySQL Server 9.0\bin\mysql.exe" (
-    set MYSQL_PATH="C:\Program Files\MySQL\MySQL Server 9.0\bin\mysql.exe"
-    echo Found MySQL Server 9.0
-) else if exist "C:\Program Files\MySQL\MySQL Server 8.2\bin\mysql.exe" (
-    set MYSQL_PATH="C:\Program Files\MySQL\MySQL Server 8.2\bin\mysql.exe"
-    echo Found MySQL Server 8.2
-) else if exist "C:\Program Files\MySQL\MySQL Server 8.1\bin\mysql.exe" (
-    set MYSQL_PATH="C:\Program Files\MySQL\MySQL Server 8.1\bin\mysql.exe"
-    echo Found MySQL Server 8.1
-) else if exist "C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe" (
-    set MYSQL_PATH="C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe"
-    echo Found MySQL Server 8.0
-) else (
-    echo.
-    echo ERROR: MySQL not found!
-    echo Please install MySQL 8.0 or higher first.
-    echo.
-    pause
-    exit /b 1
+:: Try common MySQL installation paths
+for /d %%i in ("C:\Program Files\MySQL\MySQL Server*") do (
+    if exist "%%i\bin\mysql.exe" (
+        set MYSQL_PATH="%%i\bin\mysql.exe"
+        echo Found MySQL installation at: %%i
+        goto :mysql_found
+    )
 )
+
+:: Check if mysql is in PATH
+where mysql >nul 2>&1
+if %errorLevel% equ 0 (
+    set MYSQL_PATH=mysql
+    echo Found MySQL in system PATH
+    goto :mysql_found
+)
+
+echo.
+echo WARNING: Could not auto-detect MySQL installation!
+echo If MySQL is installed, please ensure it's in your PATH or located in:
+echo   C:\Program Files\MySQL\MySQL Server*\bin\
+echo.
+echo Attempting to continue anyway...
+set MYSQL_PATH=mysql
+echo.
+
+:mysql_found
 
 echo.
 

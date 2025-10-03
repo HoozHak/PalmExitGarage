@@ -16,19 +16,16 @@ This guide will help you install MySQL directly on your Windows machine for Palm
 
 ### Step 1: Download MySQL
 
-⚠️ **IMPORTANT: Download MySQL 8.0.x (NOT MySQL 8.4 or 9.x)**
-
 1. Go to: https://dev.mysql.com/downloads/installer/
-2. **Look for MySQL Installer 8.0.x** - Current recommended versions:
-   - MySQL 8.0.35, 8.0.36, 8.0.37, 8.0.38, 8.0.39, or 8.0.40
-   - **DO NOT install MySQL 8.4.x, 9.0.x, or Innovation releases**
-   - These newer versions may have compatibility issues
-3. Download **mysql-installer-community-8.0.xx.msi**
+2. Download **MySQL Installer** - Recommended versions:
+   - **MySQL 8.0.x** (8.0.35 or higher) - Most tested and recommended
+   - MySQL 8.4.x or MySQL 9.x also work fine
+   - The application is compatible with most MySQL versions
+3. Download **mysql-installer-community.msi**
    - Choose the **"Full" installer (~400MB)** - Recommended for offline installs
    - Or **"Web" installer (~30MB)** - Downloads components during installation (requires internet)
-4. If you don't see 8.0.x on the main page:
+4. For older 8.0.x versions:
    - Click "Looking for previous GA versions?" or "Archives"
-   - Select version **8.0.40** (or latest 8.0.x available)
 
 ### Step 2: Run the Installer
 
