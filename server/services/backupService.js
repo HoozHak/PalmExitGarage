@@ -31,10 +31,10 @@ async function listDatabases() {
         connection = await pool.getConnection();
         const [rows] = await connection.query('SHOW DATABASES');
         
-        // Filter out system databases
+        // Filter out system databases and sample databases
         const databases = rows
             .map(row => row.Database)
-            .filter(db => !['information_schema', 'mysql', 'performance_schema', 'sys'].includes(db));
+            .filter(db => !['information_schema', 'mysql', 'performance_schema', 'sys', 'world', 'sakila'].includes(db));
         
         return databases;
     } catch (error) {
