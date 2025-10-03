@@ -1,0 +1,149 @@
+================================================================================
+       MYSQL VERSION QUICK REFERENCE - KEEP THIS OPEN DURING INSTALL!
+================================================================================
+
+⚠️⚠️⚠️  CRITICAL: Install MySQL 8.0.x ONLY - NOT 8.4.x or 9.x!  ⚠️⚠️⚠️
+
+================================================================================
+STEP 1: GO TO DOWNLOAD PAGE
+================================================================================
+
+URL: https://dev.mysql.com/downloads/installer/
+
+================================================================================
+STEP 2: YOU WILL SEE THIS (DON'T DOWNLOAD IT!)
+================================================================================
+
+    ┌─────────────────────────────────────────────┐
+    │  MySQL Installer 9.0.1           [Download] │  ← ❌ DON'T CLICK!
+    │  mysql-installer-community-9.0.1.msi        │
+    └─────────────────────────────────────────────┘
+
+         OR
+
+    ┌─────────────────────────────────────────────┐
+    │  MySQL Installer 8.4.2           [Download] │  ← ❌ DON'T CLICK!
+    │  mysql-installer-community-8.4.2.msi        │
+    └─────────────────────────────────────────────┘
+
+================================================================================
+STEP 3: LOOK FOR THIS LINK (CLICK IT!)
+================================================================================
+
+    → "Looking for previous GA versions?" ← CLICK THIS!
+    → "Archives"                          ← OR CLICK THIS!
+
+================================================================================
+STEP 4: SELECT THE CORRECT VERSION
+================================================================================
+
+    In the dropdown menu, select:
+
+    ✅ 8.0.40  ← RECOMMENDED
+    ✅ 8.0.39  ← Also good
+    ✅ 8.0.38  ← Also good
+
+    (Any 8.0.35 through 8.0.40 is fine)
+
+================================================================================
+STEP 5: DOWNLOAD THE FILE
+================================================================================
+
+    You should see:
+
+    ✅ mysql-installer-community-8.0.40.msi  (Full - ~400MB)
+       OR
+    ✅ mysql-installer-web-community-8.0.40.msi  (Web - ~30MB)
+
+    Click [Download]
+    Click "No thanks, just start my download"
+
+================================================================================
+STEP 6: VERIFY YOUR DOWNLOAD
+================================================================================
+
+    Before running, check your Downloads folder:
+
+    ✅ CORRECT Filename:
+       mysql-installer-community-8.0.40.msi
+       mysql-installer-community-8.0.39.msi
+       mysql-installer-community-8.0.38.msi
+
+    ❌ WRONG Filename (delete and redownload):
+       mysql-installer-community-8.4.2.msi
+       mysql-installer-community-9.0.1.msi
+
+================================================================================
+INSTALLATION SETTINGS
+================================================================================
+
+During MySQL installation, use these settings:
+
+  Setup Type:        "Developer Default" OR "Server only"
+  Config Type:       "Development Computer"
+  Port:              3306 (DO NOT CHANGE!)
+  Root Password:     Create a strong password
+                     ⚠️ WRITE IT DOWN - YOU'LL NEED IT!
+  Windows Service:   ✓ Start MySQL at System Startup
+
+================================================================================
+QUICK VERSION CHECK
+================================================================================
+
+Remember this simple rule:
+
+  8.0.xx  =  ✅ GOOD - Install this!
+  8.4.xx  =  ❌ BAD  - Skip this!
+  9.x.xx  =  ❌ BAD  - Skip this!
+
+================================================================================
+IF YOU MAKE A MISTAKE
+================================================================================
+
+If you accidentally installed 8.4.x or 9.x:
+
+  1. Uninstall MySQL (Settings → Apps → Uninstall)
+  2. Restart your computer
+  3. Download MySQL 8.0.40 (follow steps above)
+  4. Install MySQL 8.0.40
+
+================================================================================
+WHY IS THIS IMPORTANT?
+================================================================================
+
+  • PalmExitGarage was built for MySQL 8.0.x (LTS version)
+  • MySQL 8.4.x and 9.x have breaking changes
+  • Using wrong version = App won't work properly
+  • Compatibility issues, errors, data problems
+
+================================================================================
+NEED MORE HELP?
+================================================================================
+
+  See: Documentation\MYSQL_VERSION_CRITICAL_INFO.md
+       (Detailed guide with full explanations)
+
+  See: Documentation\INSTALL_MYSQL_WINDOWS.md
+       (Complete step-by-step installation guide)
+
+================================================================================
+                              FINAL CHECKLIST
+================================================================================
+
+Before clicking "Install MySQL":
+
+  [ ] Downloaded mysql-installer-community-8.0.xx.msi
+  [ ] Verified filename says "8.0" (not 8.4 or 9.x)
+  [ ] Have a password ready (8+ characters)
+  [ ] Have pen and paper to write down password
+  [ ] Running installer as Administrator
+
+✅ All checked? Good to go!
+
+================================================================================
+              Print this page or keep it open during installation!
+================================================================================
+
+Last Updated: October 2025
+Application Version: 1.1.0
+Required MySQL Version: 8.0.35 - 8.0.40 (LTS)

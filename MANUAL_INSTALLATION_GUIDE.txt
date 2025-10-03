@@ -1,0 +1,463 @@
+================================================================================
+           PalmExitGarage - MANUAL INSTALLATION GUIDE
+           Bypass the Automated Installer
+================================================================================
+
+Use this guide if the automated installer is failing the MySQL check.
+
+This will manually perform ALL steps that the one-click installer does.
+
+================================================================================
+PREREQUISITES
+================================================================================
+
+Before starting, ensure you have:
+  ✓ Node.js installed (version 16.x or higher)
+  ✓ MySQL 8.0.x installed (any version from 8.0.35 to 8.0.43)
+  ✓ MySQL root password (you'll need this!)
+  ✓ Administrator access to your computer
+
+================================================================================
+STEP 1: VERIFY PREREQUISITES
+================================================================================
+
+Open PowerShell or Command Prompt and run:
+
+  node --version
+  
+Should show: v16.x.x or higher (v20.x.x recommended)
+
+If Node.js not installed:
+  - Install from: https://nodejs.org/
+  - Download LTS version (20.x)
+  - Run installer, accept defaults
+  - Restart terminal after installation
+
+Check MySQL:
+
+  mysql --version
+  
+Should show: mysql Ver 8.0.xx
+
+If MySQL not found but you know it's installed:
+  - Find: C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe
+  - If exists, continue to next step
+
+================================================================================
+STEP 2: COPY FILES TO YOUR COMPUTER
+================================================================================
+
+From your flash drive, copy the entire PalmExitGarage folder to:
+
+  C:\PalmExitGarage
+
+Or any location you prefer. For this guide, we'll use C:\PalmExitGarage
+
+================================================================================
+STEP 3: INSTALL BACKEND DEPENDENCIES
+================================================================================
+
+Open PowerShell or Command Prompt as Administrator:
+
+  cd C:\PalmExitGarage\server
+  npm install
+
+This will take 2-5 minutes. Wait for it to complete.
+
+You should see:
+  - Downloading packages...
+  - Building dependencies...
+  - "added XXX packages"
+
+If you see warnings, that's usually OK. Errors are a problem.
+
+================================================================================
+STEP 4: INSTALL FRONTEND DEPENDENCIES
+================================================================================
+
+In the same terminal:
+
+  cd C:\PalmExitGarage\frontend
+  npm install
+
+This will take 2-5 minutes. Wait for it to complete.
+
+You should see:
+  - Downloading packages...
+  - "added XXX packages"
+
+================================================================================
+STEP 5: CONFIGURE DATABASE CONNECTION
+================================================================================
+
+You need to update the database configuration with your MySQL password.
+
+Option A - Using Notepad:
+
+  1. Open: C:\PalmExitGarage\server\config\database.js
+  2. Find the line with: password: 'your_password'
+  3. Replace 'your_password' with your actual MySQL root password
+  4. Save the file
+
+Option B - Using PowerShell:
+
+  cd C:\PalmExitGarage\server\config
+  
+  # Create database.js file with your password
+  # Replace YOUR_PASSWORD_HERE with your actual password
+  
+  @"
+module.exports = {
+    host: 'localhost',
+    port: 3306,
+    user: 'root',
+    password: 'YOUR_PASSWORD_HERE',
+    database: 'palmexitgarage',
+    connectTimeout: 60000
+};
+"@ | Out-File -FilePath database.js -Encoding ASCII
+
+================================================================================
+STEP 6: CREATE THE DATABASE
+================================================================================
+
+Open PowerShell or Command Prompt:
+
+Option A - Using MySQL Command Line:
+
+  cd "C:\Program Files\MySQL\MySQL Server 8.0\bin"
+  .\mysql -u root -p
+
+When prompted, enter your MySQL root password, then run:
+
+  CREATE DATABASE IF NOT EXISTS palmexitgarage;
+  exit;
+
+Option B - Using MySQL Workbench:
+
+  1. Open MySQL Workbench
+  2. Connect to Local instance
+  3. In Query window, type: CREATE DATABASE IF NOT EXISTS palmexitgarage;
+  4. Click Execute (lightning bolt icon)
+
+================================================================================
+STEP 7: CREATE DATABASE TABLES (MIGRATION)
+================================================================================
+
+Open PowerShell or Command Prompt:
+
+  cd C:\PalmExitGarage\server
+  node migrate.js
+
+You should see output like:
+  "Connected to MySQL database"
+  "Creating PalmExitGarage database tables..."
+  "customers table created successfully"
+  "vehicles table created successfully"
+  ...
+  "All PalmExitGarage tables created successfully!"
+
+If you see errors about connection:
+  - Check your MySQL password in database.js
+  - Make sure MySQL service is running (services.msc → MySQL80)
+  - Try again
+
+================================================================================
+STEP 8: SEED VEHICLE DATA
+================================================================================
+
+This adds 703 vehicle models (2010-2015) to the database:
+
+  cd C:\PalmExitGarage\server
+  node seed_vehicles_2010_2015.js
+
+This may take 1-2 minutes. Wait for completion.
+
+You should see:
+  "Seeding vehicle reference data..."
+  "Seeded XXX vehicles"
+  "Vehicle seeding completed successfully!"
+
+================================================================================
+STEP 9: SEED PARTS CATALOG
+================================================================================
+
+This adds 88 professional automotive parts:
+
+  cd C:\PalmExitGarage\server
+  node seed_autozone_parts.js
+
+You should see:
+  "Seeding AutoZone parts catalog..."
+  "Successfully seeded 88 parts"
+
+================================================================================
+STEP 10: SEED LABOR SERVICES
+================================================================================
+
+This adds 10 common labor operations:
+
+  cd C:\PalmExitGarage\server
+  node seed_labor.js
+
+You should see:
+  "Seeding labor operations..."
+  "Successfully seeded 10 labor operations"
+
+================================================================================
+STEP 11: SEED TEST CUSTOMERS (OPTIONAL)
+================================================================================
+
+This adds 2 test customers with vehicles for testing:
+
+  cd C:\PalmExitGarage\server
+  node seed_test_data.js
+
+You should see:
+  "Seeding test customer data..."
+  "Test customers and vehicles seeded successfully!"
+
+Test Customers:
+  - John Doe (john.doe@example.com) - 2018 Honda Accord
+  - Jane Smith (jane.smith@example.com) - 2020 Toyota RAV4
+
+================================================================================
+STEP 12: CREATE START SCRIPT
+================================================================================
+
+Create a batch file to start the application easily.
+
+Using Notepad, create: C:\PalmExitGarage\START_PALMEXITGARAGE.bat
+
+Paste this content:
+
+@echo off
+cd /d "%~dp0"
+echo Starting PalmExitGarage...
+echo.
+start "PalmExitGarage Backend" cmd /k "cd server && npm start"
+timeout /t 3 /nobreak >nul
+start "PalmExitGarage Frontend" cmd /k "cd frontend && npm run dev"
+timeout /t 5 /nobreak >nul
+start http://localhost:5174
+echo.
+echo PalmExitGarage is starting!
+echo The application will open in your browser shortly.
+echo.
+
+Save the file.
+
+================================================================================
+STEP 13: CREATE STOP SCRIPT (OPTIONAL)
+================================================================================
+
+Create: C:\PalmExitGarage\STOP_PALMEXITGARAGE.bat
+
+Paste this content:
+
+@echo off
+echo Stopping PalmExitGarage...
+taskkill /FI "WindowTitle eq PalmExitGarage Backend*" /F >nul 2>&1
+taskkill /FI "WindowTitle eq PalmExitGarage Frontend*" /F >nul 2>&1
+echo PalmExitGarage stopped.
+pause
+
+Save the file.
+
+================================================================================
+STEP 14: CREATE DESKTOP SHORTCUT (OPTIONAL)
+================================================================================
+
+1. Right-click on START_PALMEXITGARAGE.bat
+2. Select "Send to" → "Desktop (create shortcut)"
+3. Rename shortcut to "Start PalmExitGarage"
+
+================================================================================
+STEP 15: START THE APPLICATION
+================================================================================
+
+Double-click: C:\PalmExitGarage\START_PALMEXITGARAGE.bat
+
+Or manually start:
+
+Terminal 1 (Backend):
+  cd C:\PalmExitGarage\server
+  npm start
+
+Terminal 2 (Frontend):
+  cd C:\PalmExitGarage\frontend
+  npm run dev
+
+Wait 10-15 seconds for both to start.
+
+================================================================================
+STEP 16: ACCESS THE APPLICATION
+================================================================================
+
+Open your web browser and go to:
+
+  http://localhost:5174
+
+You should see the PalmExitGarage login/home screen!
+
+Backend API is running at:
+  http://localhost:5000
+
+================================================================================
+TROUBLESHOOTING
+================================================================================
+
+PROBLEM: "Cannot find module 'xyz'"
+SOLUTION: 
+  - Delete node_modules folder
+  - Run npm install again in that directory
+
+PROBLEM: "ECONNREFUSED" or "Database connection failed"
+SOLUTION:
+  - Check MySQL service is running (services.msc → MySQL80)
+  - Verify password in server/config/database.js is correct
+  - Test connection: mysql -u root -p palmexitgarage
+
+PROBLEM: "Port 5174 already in use"
+SOLUTION:
+  - Close other applications using that port
+  - Or change port in frontend/vite.config.js
+
+PROBLEM: "Port 5000 already in use"
+SOLUTION:
+  - Close other applications using that port
+  - Or change port in server/index.js
+
+PROBLEM: Migration fails with table errors
+SOLUTION:
+  - Drop and recreate database:
+    mysql -u root -p
+    DROP DATABASE palmexitgarage;
+    CREATE DATABASE palmexitgarage;
+    exit;
+  - Run migrations again: node migrate.js
+
+================================================================================
+VERIFICATION CHECKLIST
+================================================================================
+
+After installation, verify:
+
+  ✓ Database 'palmexitgarage' exists
+  ✓ Database has tables (customers, vehicles, parts, etc.)
+  ✓ Vehicle reference has 703 entries
+  ✓ Parts table has 88 entries
+  ✓ Labor table has 10 entries
+  ✓ Backend starts without errors
+  ✓ Frontend starts and opens browser
+  ✓ Can access http://localhost:5174
+
+To check database:
+  mysql -u root -p palmexitgarage -e "SELECT COUNT(*) FROM vehicle_reference;"
+  Should show: 703
+
+  mysql -u root -p palmexitgarage -e "SELECT COUNT(*) FROM parts;"
+  Should show: 88
+
+================================================================================
+QUICK COMMAND SUMMARY
+================================================================================
+
+If you need to redo everything:
+
+1. Install dependencies:
+   cd C:\PalmExitGarage\server && npm install
+   cd C:\PalmExitGarage\frontend && npm install
+
+2. Setup database:
+   mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS palmexitgarage;"
+   cd C:\PalmExitGarage\server
+   node migrate.js
+   node seed_vehicles_2010_2015.js
+   node seed_autozone_parts.js
+   node seed_labor.js
+   node seed_test_data.js
+
+3. Start application:
+   Run START_PALMEXITGARAGE.bat
+
+================================================================================
+ALTERNATIVE: ONE COMMAND DATABASE SETUP
+================================================================================
+
+If you want to run all database setup in one go:
+
+cd C:\PalmExitGarage\server
+
+# Create database first via MySQL
+mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS palmexitgarage;"
+
+# Then run all seeding scripts
+node migrate.js && node seed_vehicles_2010_2015.js && node seed_autozone_parts.js && node seed_labor.js && node seed_test_data.js
+
+================================================================================
+MYSQL PASSWORD IN ENVIRONMENT VARIABLE (ADVANCED)
+================================================================================
+
+For better security, you can use environment variables:
+
+1. Create: C:\PalmExitGarage\server\.env
+
+   DB_HOST=localhost
+   DB_PORT=3306
+   DB_USER=root
+   DB_PASSWORD=your_mysql_password_here
+   DB_NAME=palmexitgarage
+
+2. Update server/config/database.js:
+
+   require('dotenv').config();
+   
+   module.exports = {
+       host: process.env.DB_HOST || 'localhost',
+       port: process.env.DB_PORT || 3306,
+       user: process.env.DB_USER || 'root',
+       password: process.env.DB_PASSWORD,
+       database: process.env.DB_NAME || 'palmexitgarage',
+       connectTimeout: 60000
+   };
+
+3. Install dotenv:
+   cd C:\PalmExitGarage\server
+   npm install dotenv
+
+================================================================================
+NEED HELP?
+================================================================================
+
+Common issues:
+  - MySQL not found: Add to PATH or use full path
+  - Permission errors: Run as Administrator
+  - Port conflicts: Change ports in config files
+  - Database errors: Check MySQL is running
+
+================================================================================
+SUCCESS!
+================================================================================
+
+If you can access http://localhost:5174 and see the application:
+
+  ✅ Installation complete!
+  ✅ Database populated with:
+     - 703 vehicle models
+     - 88 professional parts
+     - 10 labor services
+     - 2 test customers
+
+You can now:
+  - Add customers
+  - Create work orders
+  - Manage inventory
+  - Generate receipts
+  - Backup/restore database
+
+================================================================================
+
+Created: October 3, 2025
+Version: 1.1.0
+For: PalmExitGarage MySQL Edition

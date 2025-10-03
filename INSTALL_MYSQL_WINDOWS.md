@@ -16,9 +16,19 @@ This guide will help you install MySQL directly on your Windows machine for Palm
 
 ### Step 1: Download MySQL
 
+⚠️ **IMPORTANT: Download MySQL 8.0.x (NOT MySQL 8.4 or 9.x)**
+
 1. Go to: https://dev.mysql.com/downloads/installer/
-2. Download **MySQL Installer for Windows** (mysql-installer-community-8.x.x.msi)
-3. Choose the larger "Full" installer (~400MB) or smaller "Web" installer
+2. **Look for MySQL Installer 8.0.x** - Current recommended versions:
+   - MySQL 8.0.35, 8.0.36, 8.0.37, 8.0.38, 8.0.39, or 8.0.40
+   - **DO NOT install MySQL 8.4.x, 9.0.x, or Innovation releases**
+   - These newer versions may have compatibility issues
+3. Download **mysql-installer-community-8.0.xx.msi**
+   - Choose the **"Full" installer (~400MB)** - Recommended for offline installs
+   - Or **"Web" installer (~30MB)** - Downloads components during installation (requires internet)
+4. If you don't see 8.0.x on the main page:
+   - Click "Looking for previous GA versions?" or "Archives"
+   - Select version **8.0.40** (or latest 8.0.x available)
 
 ### Step 2: Run the Installer
 
@@ -27,9 +37,24 @@ This guide will help you install MySQL directly on your Windows machine for Palm
 
 ### Step 3: Choose Setup Type
 
-Select **"Developer Default"** or **"Server only"**
-- Developer Default: Includes MySQL Workbench (GUI tool)
-- Server only: Just the database server
+⚠️ **IMPORTANT: Choose the right setup type based on your needs**
+
+**Option A - Server Only (Recommended for production):**
+- Select **"Server only"**
+- Installs: MySQL Server 8.0.x only
+- Size: ~200MB
+- Best for: Production environments, minimal installations
+
+**Option B - Developer Default (Recommended for development):**
+- Select **"Developer Default"**
+- Installs: MySQL Server, MySQL Workbench, MySQL Shell, connectors, samples
+- Size: ~400MB
+- Best for: Developers who want GUI management tools
+- Includes MySQL Workbench - a visual database management tool
+
+**Option C - Custom:**
+- For advanced users who want to select specific components
+- Minimum required: MySQL Server 8.0.x
 
 Click **Next**
 
@@ -47,8 +72,13 @@ Click **Next**
 ### Step 6: Configure MySQL Server
 
 **Type and Networking:**
-- Config Type: **Development Computer**
-- Port: **3306** (default)
+- Config Type: **Development Computer** (or "Server Computer" for production)
+  - Development: Optimized for minimal resource usage
+  - Server: Optimized for dedicated database server
+- Port: **3306** (default - DO NOT CHANGE unless you have a conflict)
+- TCP/IP: Should be **CHECKED** ✓
+- Open Windows Firewall port: **CHECKED** ✓ (allows connections)
+- Show Advanced and Logging Options: Optional
 - Click **Next**
 
 **Authentication Method:**
@@ -56,10 +86,15 @@ Click **Next**
 - Click **Next**
 
 **Accounts and Roles:**
-- Set a **Root Password** (remember this!)
-  - Example: `MySecurePassword123!`
-  - **WRITE THIS DOWN!**
+- Set a **Root Password** (remember this - you'll need it EVERY TIME!)
+  - **REQUIREMENT:** Minimum 8 characters, mix of letters, numbers, and symbols
+  - Example: `MySecure123!` or `PalmExit2025!`
+  - **⚠️ CRITICAL: WRITE THIS DOWN AND KEEP IT SAFE!**
+  - You will need this password to configure PalmExitGarage
+- Optional: Add MySQL User Accounts (can do this later)
 - Click **Next**
+
+💡 **Pro Tip:** Use a password manager or write it in your installation notes file
 
 **Windows Service:**
 - Keep default settings:

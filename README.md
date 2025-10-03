@@ -49,22 +49,36 @@
 ## 📋 Quick Start
 
 ### Prerequisites
-- **Node.js** 16.x or higher
-- **MySQL** 8.0 or higher (local installation)
+- **Node.js** 16.x or higher (Node.js 20.x LTS recommended)
+- **MySQL 8.0.x** (local installation)
+  - ⚠️ **Supported versions:** MySQL 8.0.35 through 8.0.40
+  - ⚠️ **NOT compatible with:** MySQL 8.4.x, MySQL 9.x, or Innovation releases
+  - **Recommended:** MySQL 8.0.40 (latest stable 8.0.x LTS version)
 - **Windows** 10/11 (PowerShell required)
 
 ### Installation Steps
 
 #### 1. Install MySQL (if not already installed)
+
+⚠️ **CRITICAL: Install MySQL 8.0.x ONLY (NOT 8.4.x or 9.x)**
+
+**Option A - Automated Installation (Recommended):**
 ```powershell
 # Run the automated MySQL installer
 .\download-mysql.ps1
-
-# Or install manually from:
-# https://dev.mysql.com/downloads/mysql/
 ```
 
-See `INSTALL_MYSQL_WINDOWS.md` for detailed MySQL setup instructions.
+**Option B - Manual Installation:**
+1. Go to: https://dev.mysql.com/downloads/installer/
+2. Download **MySQL Installer 8.0.40** (or latest 8.0.x version)
+   - Click "Looking for previous GA versions?" if 8.0.x is not on main page
+3. During installation:
+   - Choose **"Developer Default"** or **"Server only"**
+   - Set **root password** (WRITE THIS DOWN!)
+   - Keep port as **3306**
+   - Enable "Start MySQL at System Startup"
+
+See `INSTALL_MYSQL_WINDOWS.md` for detailed step-by-step MySQL setup instructions.
 
 #### 2. Clone & Setup
 ```bash

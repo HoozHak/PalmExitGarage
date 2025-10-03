@@ -194,6 +194,7 @@
                 <div class="info-section">
                     <h3>Vehicle Information</h3>
                     <p><strong>Vehicle:</strong> <span id="vehicle-info"></span></p>
+                    <p><strong>Current Mileage:</strong> <span id="vehicle-mileage"></span> miles</p>
                     <p><strong>VIN:</strong> <span id="vehicle-vin"></span></p>
                     <p><strong>License Plate:</strong> <span id="vehicle-plate"></span></p>
                 </div>
@@ -539,6 +540,7 @@
                     })),
                     tax_rate: signatureData.workOrderData.tax_rate,
                     notes: signatureData.workOrderData.notes,
+                    current_mileage: signatureData.workOrderData.current_mileage,
                     custom_timestamp: signatureData.workOrderData.custom_timestamp,
                     timezone_info: signatureData.workOrderData.timezone_info,
                     display_time: signatureData.workOrderData.display_time,
@@ -604,10 +606,12 @@
             
             if (data.vehicleData) {
                 document.getElementById('vehicle-info').textContent = `${data.vehicleData.year} ${data.vehicleData.make} ${data.vehicleData.model}`;
+                document.getElementById('vehicle-mileage').textContent = data.workOrderData.current_mileage ? data.workOrderData.current_mileage.toLocaleString() : 'Not provided';
                 document.getElementById('vehicle-vin').textContent = data.vehicleData.vin || 'Not provided';
                 document.getElementById('vehicle-plate').textContent = data.vehicleData.license_plate || 'Not provided';
             } else {
                 document.getElementById('vehicle-info').textContent = 'No vehicle specified';
+                document.getElementById('vehicle-mileage').textContent = 'N/A';
                 document.getElementById('vehicle-vin').textContent = 'N/A';
                 document.getElementById('vehicle-plate').textContent = 'N/A';
             }

@@ -49,23 +49,64 @@ if %errorLevel% neq 0 (
 )
 echo.
 
-:: Check if MySQL is installed
+:: Check if MySQL 8.0.x is installed
 echo [2/4] Checking MySQL installation...
-"C:\Program Files\MySQL\MySQL Server 9.1\bin\mysql.exe" --version >nul 2>&1
-if %errorLevel% neq 0 (
-    echo MySQL not found.
+
+set MYSQL_FOUND=0
+set WRONG_VERSION=0
+
+:: Check for WRONG versions (should not be installed)
+if exist "C:\Program Files\MySQL\MySQL Server 9.1\bin\mysql.exe" set WRONG_VERSION=1
+if exist "C:\Program Files\MySQL\MySQL Server 9.0\bin\mysql.exe" set WRONG_VERSION=1
+if exist "C:\Program Files\MySQL\MySQL Server 8.4\bin\mysql.exe" set WRONG_VERSION=1
+if exist "C:\Program Files\MySQL\MySQL Server 8.2\bin\mysql.exe" set WRONG_VERSION=1
+if exist "C:\Program Files\MySQL\MySQL Server 8.1\bin\mysql.exe" set WRONG_VERSION=1
+
+:: Check for CORRECT version (8.0.x)
+if exist "C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe" set MYSQL_FOUND=1
+
+if %WRONG_VERSION% equ 1 (
     echo.
-    echo OPTION 1: Install MySQL automatically
-    echo   Run the PowerShell script: download-mysql.ps1
+    echo ============================================================
+    echo WARNING: INCOMPATIBLE MySQL VERSION DETECTED!
+    echo ============================================================
     echo.
-    echo OPTION 2: Install MySQL manually
-    echo   Download from: https://dev.mysql.com/downloads/mysql/
+    echo You have MySQL 8.4.x, 9.x, or another incompatible version installed.
+    echo PalmExitGarage requires MySQL 8.0.x ONLY (LTS version)
     echo.
-    echo After installing MySQL, run this installer again.
+    echo Please uninstall the current MySQL version and install MySQL 8.0.40
+    echo.
+    echo See: MYSQL_VERSION_QUICK_REFERENCE.txt for detailed instructions
+    echo.
+    pause
+    exit /b 1
+)
+
+if %MYSQL_FOUND% equ 0 (
+    echo.
+    echo ============================================================
+    echo MySQL 8.0.x NOT FOUND
+    echo ============================================================
+    echo.
+    echo CRITICAL: You must install MySQL 8.0.x (NOT 8.4.x or 9.x!)
+    echo.
+    echo RECOMMENDED: MySQL 8.0.40 or MySQL 8.0.43
+    echo.
+    echo OPTION 1: Install MySQL manually
+    echo   1. Go to: https://dev.mysql.com/downloads/installer/
+    echo   2. Click "Looking for previous GA versions?"
+    echo   3. Select "8.0.40" or latest 8.0.x
+    echo   4. Download and install
+    echo.
+    echo OPTION 2: Follow the quick reference guide
+    echo   Open: MYSQL_VERSION_QUICK_REFERENCE.txt
+    echo.
+    echo After installing MySQL 8.0.x, run this installer again.
+    echo.
     pause
     exit /b 1
 ) else (
-    echo MySQL is already installed.
+    echo MySQL 8.0.x is installed. ✓
 )
 echo.
 

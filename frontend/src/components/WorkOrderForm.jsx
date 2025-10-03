@@ -13,7 +13,8 @@ function WorkOrderForm({ customerId, vehicleId, customerData, vehicleData, onWor
     parts: [], // { part_id, quantity, cost_cents }
     labor: [], // { labor_id, quantity, cost_cents }
     tax_rate: 0.0825, // Default, will be loaded from settings
-    notes: ''
+    notes: '',
+    current_mileage: '' // Required field for work order creation
   });
   const [taxSettings, setTaxSettings] = useState(null);
 
@@ -125,9 +126,21 @@ function WorkOrderForm({ customerId, vehicleId, customerData, vehicleData, onWor
   };
 
   const handleVehicleChange = (e) => {
+    const selectedVehicleId = e.target.value;
+    const selectedVehicleData = vehicles.find(v => v.vehicle_id.toString() === selectedVehicleId);
+    
     setWorkOrder(prev => ({
       ...prev,
-      vehicle_id: e.target.value
+      vehicle_id: selectedVehicleId,
+      // Pre-populate with existing mileage if available
+      current_mileage: selectedVehicleData?.mileage || ''
+    }));
+  };
+
+  const handleMileageChange = (e) => {
+    setWorkOrder(prev => ({
+      ...prev,
+      current_mileage: e.target.value
     }));
   };
 
@@ -220,6 +233,12 @@ function WorkOrderForm({ customerId, vehicleId, customerData, vehicleData, onWor
       newErrors.vehicle_id = 'Vehicle is required';
     }
 
+    if (!workOrder.current_mileage || workOrder.current_mileage === '') {
+      newErrors.current_mileage = 'Current mileage is required';
+    } else if (parseInt(workOrder.current_mileage) < 0) {
+      newErrors.current_mileage = 'Mileage must be a positive number';
+    }
+
     const validParts = selectedParts.filter(p => p.part_id && p.quantity);
     const validLabor = selectedLabor.filter(l => l.labor_id && l.quantity);
 
@@ -279,6 +298,7 @@ function WorkOrderForm({ customerId, vehicleId, customerData, vehicleData, onWor
           work_order_id: null, // Will be set after signature
           customer_id: workOrder.customer_id,
           vehicle_id: workOrder.vehicle_id,
+          current_mileage: parseInt(workOrder.current_mileage),
           parts: partsData,
           labor: laborData,
           tax_rate: workOrder.tax_rate,
@@ -311,7 +331,7 @@ function WorkOrderForm({ customerId, vehicleId, customerData, vehicleData, onWor
       // Reset form after signature window opens
       setSelectedParts([{ part_id: '', quantity: 1 }]);
       setSelectedLabor([{ labor_id: '', quantity: 1 }]);
-      setWorkOrder(prev => ({ ...prev, notes: '' }));
+      setWorkOrder(prev => ({ ...prev, notes: '', current_mileage: '' }));
       setErrors({});
 
     } catch (error) {
@@ -445,6 +465,56 @@ function WorkOrderForm({ customerId, vehicleId, customerData, vehicleData, onWor
             }}>
               No vehicles found for this customer. Please add a vehicle first.
             </p>
+          )}
+        </div>
+      )}
+
+      {/* Current Mileage - Required Field */}
+      {(vehicleId || workOrder.vehicle_id) && (
+        <div style={{
+          backgroundColor: '#333',
+          padding: '20px',
+          borderRadius: '10px',
+          border: errors.current_mileage ? '2px solid #ff4444' : '2px solid #FFD329',
+          marginBottom: '25px'
+        }}>
+          <h4 style={{ margin: 0, marginBottom: '15px', color: '#FFD329' }}>
+            🔢 Current Mileage <span style={{ color: '#ff4444' }}>*</span>
+          </h4>
+          <p style={{
+            color: '#ccc',
+            fontSize: '14px',
+            marginBottom: '15px',
+            fontStyle: 'italic'
+          }}>
+            Enter the current odometer reading. This will update the vehicle's mileage in the system.
+          </p>
+          <input
+            type="number"
+            min="0"
+            value={workOrder.current_mileage}
+            onChange={handleMileageChange}
+            style={{
+              width: '100%',
+              padding: '12px',
+              borderRadius: '5px',
+              border: errors.current_mileage ? '2px solid #ff4444' : '1px solid #666',
+              backgroundColor: '#444',
+              color: '#FFD329',
+              fontSize: '16px',
+              fontWeight: 'bold'
+            }}
+            placeholder="Enter current mileage (e.g., 45000)"
+          />
+          {errors.current_mileage && (
+            <div style={{
+              color: '#ff4444',
+              fontSize: '14px',
+              marginTop: '8px',
+              fontWeight: 'bold'
+            }}>
+              {errors.current_mileage}
+            </div>
           )}
         </div>
       )}

@@ -21,6 +21,8 @@ function ExistingCustomer() {
   const [selectedVehicle, setSelectedVehicle] = useState(null);
   const [showFullWorkOrderDetail, setShowFullWorkOrderDetail] = useState(false);
   const [selectedWorkOrderId, setSelectedWorkOrderId] = useState(null);
+  const [editingVehicle, setEditingVehicle] = useState(null);
+  const [vehicleEditMode, setVehicleEditMode] = useState(false);
 
   useEffect(() => {
     loadCustomers();
@@ -191,6 +193,52 @@ function ExistingCustomer() {
       style: 'currency',
       currency: 'USD'
     }).format(cents / 100);
+  };
+
+  const handleEditVehicle = (vehicle) => {
+    setEditingVehicle({ ...vehicle });
+    setVehicleEditMode(true);
+  };
+
+  const handleSaveVehicle = async () => {
+    if (!editingVehicle.year || !editingVehicle.make || !editingVehicle.model) {
+      alert('Year, Make, and Model are required');
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE}/vehicles/${editingVehicle.vehicle_id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(editingVehicle),
+      });
+
+      if (response.ok) {
+        // Update the vehicle in the customerHistory
+        setCustomerHistory(prev => ({
+          ...prev,
+          vehicles: prev.vehicles.map(v => 
+            v.vehicle_id === editingVehicle.vehicle_id ? editingVehicle : v
+          )
+        }));
+        setVehicleEditMode(false);
+        setEditingVehicle(null);
+        alert('Vehicle updated successfully!');
+      } else {
+        const error = await response.json();
+        alert('Error updating vehicle: ' + (error.message || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Network error: Could not connect to server');
+    }
+  };
+
+  const handleCancelVehicleEdit = () => {
+    setVehicleEditMode(false);
+    setEditingVehicle(null);
   };
 
   const formatDate = (dateString) => {
@@ -728,64 +776,284 @@ function ExistingCustomer() {
                         backgroundColor: '#444',
                         padding: '15px',
                         borderRadius: '5px',
-                        border: '1px solid #666'
+                        border: vehicleEditMode && editingVehicle?.vehicle_id === vehicle.vehicle_id ? '2px solid #FFD329' : '1px solid #666'
                       }}
                     >
-                      <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: '2fr 1fr 1fr 1fr',
-                        gap: '15px',
-                        alignItems: 'center'
-                      }}>
-                        <div>
-                          <div style={{ fontWeight: 'bold', fontSize: '16px' }}>
-                            {vehicle.year} {vehicle.make} {vehicle.model}
+                      {vehicleEditMode && editingVehicle?.vehicle_id === vehicle.vehicle_id ? (
+                        // Edit Mode
+                        <div style={{ display: 'grid', gap: '15px' }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
+                            <div>
+                              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#FFD329' }}>Year *</label>
+                              <input
+                                type="number"
+                                value={editingVehicle.year || ''}
+                                onChange={(e) => setEditingVehicle(prev => ({...prev, year: parseInt(e.target.value) || ''}))}                                style={{
+                                  width: '100%',
+                                  padding: '8px',
+                                  borderRadius: '5px',
+                                  border: '1px solid #666',
+                                  backgroundColor: '#333',
+                                  color: '#FFD329',
+                                  fontSize: '14px'
+                                }}
+                              />
+                            </div>
+                            <div>
+                              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#FFD329' }}>Make *</label>
+                              <input
+                                type="text"
+                                value={editingVehicle.make || ''}
+                                onChange={(e) => setEditingVehicle(prev => ({...prev, make: e.target.value}))}
+                                style={{
+                                  width: '100%',
+                                  padding: '8px',
+                                  borderRadius: '5px',
+                                  border: '1px solid #666',
+                                  backgroundColor: '#333',
+                                  color: '#FFD329',
+                                  fontSize: '14px'
+                                }}
+                              />
+                            </div>
+                            <div>
+                              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#FFD329' }}>Model *</label>
+                              <input
+                                type="text"
+                                value={editingVehicle.model || ''}
+                                onChange={(e) => setEditingVehicle(prev => ({...prev, model: e.target.value}))}
+                                style={{
+                                  width: '100%',
+                                  padding: '8px',
+                                  borderRadius: '5px',
+                                  border: '1px solid #666',
+                                  backgroundColor: '#333',
+                                  color: '#FFD329',
+                                  fontSize: '14px'
+                                }}
+                              />
+                            </div>
                           </div>
-                          <div style={{ color: '#ccc', fontSize: '14px' }}>
-                            Vehicle ID: {vehicle.vehicle_id}
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
+                            <div>
+                              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#FFD329' }}>Color</label>
+                              <input
+                                type="text"
+                                value={editingVehicle.color || ''}
+                                onChange={(e) => setEditingVehicle(prev => ({...prev, color: e.target.value}))}
+                                style={{
+                                  width: '100%',
+                                  padding: '8px',
+                                  borderRadius: '5px',
+                                  border: '1px solid #666',
+                                  backgroundColor: '#333',
+                                  color: '#FFD329',
+                                  fontSize: '14px'
+                                }}
+                              />
+                            </div>
+                            <div>
+                              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#FFD329' }}>License Plate</label>
+                              <input
+                                type="text"
+                                value={editingVehicle.license_plate || ''}
+                                onChange={(e) => setEditingVehicle(prev => ({...prev, license_plate: e.target.value}))}
+                                style={{
+                                  width: '100%',
+                                  padding: '8px',
+                                  borderRadius: '5px',
+                                  border: '1px solid #666',
+                                  backgroundColor: '#333',
+                                  color: '#FFD329',
+                                  fontSize: '14px'
+                                }}
+                              />
+                            </div>
+                            <div>
+                              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#FFD329' }}>Mileage</label>
+                              <input
+                                type="number"
+                                value={editingVehicle.mileage || ''}
+                                onChange={(e) => setEditingVehicle(prev => ({...prev, mileage: parseInt(e.target.value) || ''}))}                                style={{
+                                  width: '100%',
+                                  padding: '8px',
+                                  borderRadius: '5px',
+                                  border: '1px solid #666',
+                                  backgroundColor: '#333',
+                                  color: '#FFD329',
+                                  fontSize: '14px'
+                                }}
+                              />
+                            </div>
+                          </div>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
+                            <div>
+                              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#FFD329' }}>VIN</label>
+                              <input
+                                type="text"
+                                value={editingVehicle.vin || ''}
+                                onChange={(e) => setEditingVehicle(prev => ({...prev, vin: e.target.value}))}
+                                maxLength="17"
+                                style={{
+                                  width: '100%',
+                                  padding: '8px',
+                                  borderRadius: '5px',
+                                  border: '1px solid #666',
+                                  backgroundColor: '#333',
+                                  color: '#FFD329',
+                                  fontSize: '14px'
+                                }}
+                              />
+                            </div>
+                            <div>
+                              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#FFD329' }}>Engine Size</label>
+                              <input
+                                type="text"
+                                value={editingVehicle.engine_size || ''}
+                                onChange={(e) => setEditingVehicle(prev => ({...prev, engine_size: e.target.value}))}
+                                placeholder="e.g., 2.0L Turbo"
+                                style={{
+                                  width: '100%',
+                                  padding: '8px',
+                                  borderRadius: '5px',
+                                  border: '1px solid #666',
+                                  backgroundColor: '#333',
+                                  color: '#FFD329',
+                                  fontSize: '14px'
+                                }}
+                              />
+                            </div>
+                            <div>
+                              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#FFD329' }}>Transmission</label>
+                              <select
+                                value={editingVehicle.transmission || ''}
+                                onChange={(e) => setEditingVehicle(prev => ({...prev, transmission: e.target.value}))}
+                                style={{
+                                  width: '100%',
+                                  padding: '8px',
+                                  borderRadius: '5px',
+                                  border: '1px solid #666',
+                                  backgroundColor: '#333',
+                                  color: '#FFD329',
+                                  fontSize: '14px'
+                                }}
+                              >
+                                <option value="">Select...</option>
+                                <option value="Automatic">Automatic</option>
+                                <option value="Manual">Manual</option>
+                                <option value="CVT">CVT</option>
+                              </select>
+                            </div>
+                          </div>
+                          <div>
+                            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#FFD329' }}>Notes</label>
+                            <textarea
+                              value={editingVehicle.notes || ''}
+                              onChange={(e) => setEditingVehicle(prev => ({...prev, notes: e.target.value}))}
+                              rows="2"
+                              style={{
+                                width: '100%',
+                                padding: '8px',
+                                borderRadius: '5px',
+                                border: '1px solid #666',
+                                backgroundColor: '#333',
+                                color: '#FFD329',
+                                fontSize: '14px',
+                                resize: 'vertical'
+                              }}
+                            />
+                          </div>
+                          <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                            <button
+                              onClick={handleCancelVehicleEdit}
+                              style={{
+                                backgroundColor: '#666',
+                                color: 'white',
+                                padding: '8px 16px',
+                                fontSize: '14px',
+                                border: 'none',
+                                borderRadius: '5px',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              onClick={handleSaveVehicle}
+                              style={{
+                                backgroundColor: '#FFD329',
+                                color: 'black',
+                                padding: '8px 16px',
+                                fontSize: '14px',
+                                fontWeight: 'bold',
+                                border: 'none',
+                                borderRadius: '5px',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              Save Vehicle
+                            </button>
                           </div>
                         </div>
-                        <div style={{ color: '#ccc' }}>
-                          {vehicle.color && `${vehicle.color}`}
-                          {vehicle.license_plate && <br />}
-                          {vehicle.license_plate && `Plate: ${vehicle.license_plate}`}
+                      ) : (
+                        // View Mode
+                        <div style={{
+                          display: 'grid',
+                          gridTemplateColumns: '2fr 1fr 1fr 1fr',
+                          gap: '15px',
+                          alignItems: 'center'
+                        }}>
+                          <div>
+                            <div style={{ fontWeight: 'bold', fontSize: '16px' }}>
+                              {vehicle.year} {vehicle.make} {vehicle.model}
+                            </div>
+                            <div style={{ color: '#ccc', fontSize: '14px' }}>
+                              Vehicle ID: {vehicle.vehicle_id}
+                            </div>
+                          </div>
+                          <div style={{ color: '#ccc' }}>
+                            {vehicle.color && `${vehicle.color}`}
+                            {vehicle.license_plate && <br />}
+                            {vehicle.license_plate && `Plate: ${vehicle.license_plate}`}
+                          </div>
+                          <div style={{ color: '#ccc' }}>
+                            {vehicle.mileage ? `${vehicle.mileage.toLocaleString()} miles` : 'Mileage: N/A'}
+                            {vehicle.vin && <br />}
+                            {vehicle.vin && `VIN: ${vehicle.vin.slice(-4)}`}
+                          </div>
+                          <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            <button
+                              onClick={() => handleCreateWorkOrder(vehicle)}
+                              style={{
+                                backgroundColor: '#4CAF50',
+                                color: 'white',
+                                padding: '6px 12px',
+                                fontSize: '12px',
+                                fontWeight: 'bold',
+                                border: 'none',
+                                borderRadius: '4px',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              🔧 Work Order
+                            </button>
+                            <button
+                              onClick={() => handleEditVehicle(vehicle)}
+                              style={{
+                                backgroundColor: '#666',
+                                color: '#FFD329',
+                                padding: '6px 12px',
+                                fontSize: '12px',
+                                border: '1px solid #888',
+                                borderRadius: '4px',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              Edit
+                            </button>
+                          </div>
                         </div>
-                        <div style={{ color: '#ccc' }}>
-                          {vehicle.mileage ? `${vehicle.mileage.toLocaleString()} miles` : 'Mileage: N/A'}
-                          {vehicle.vin && <br />}
-                          {vehicle.vin && `VIN: ${vehicle.vin.slice(-4)}`}
-                        </div>
-                        <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                          <button
-                            onClick={() => handleCreateWorkOrder(vehicle)}
-                            style={{
-                              backgroundColor: '#4CAF50',
-                              color: 'white',
-                              padding: '6px 12px',
-                              fontSize: '12px',
-                              fontWeight: 'bold',
-                              border: 'none',
-                              borderRadius: '4px',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            🔧 Work Order
-                          </button>
-                          <button
-                            style={{
-                              backgroundColor: '#666',
-                              color: '#FFD329',
-                              padding: '6px 12px',
-                              fontSize: '12px',
-                              border: '1px solid #888',
-                              borderRadius: '4px',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            Edit
-                          </button>
-                        </div>
-                      </div>
+                      )}
                     </div>
                   ))}
                 </div>

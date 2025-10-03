@@ -1221,7 +1221,7 @@ app.get('/api/work-orders', (req, res) => {
 
 // Create new work order/estimate
 app.post('/api/work-orders', (req, res) => {
-    const { customer_id, vehicle_id, parts, labor, tax_rate, notes } = req.body;
+    const { customer_id, vehicle_id, parts, labor, tax_rate, notes, current_mileage } = req.body;
     
     // Calculate totals
     let subtotal_cents = 0;
@@ -1239,58 +1239,103 @@ app.post('/api/work-orders', (req, res) => {
     const tax_cents = Math.round(subtotal_cents * (tax_rate || 0.0825));
     const total_cents = subtotal_cents + tax_cents;
     
-    // Insert work order
-    const woQuery = 'INSERT INTO work_orders (customer_id, vehicle_id, subtotal_cents, tax_cents, total_cents, tax_rate, notes) VALUES (?, ?, ?, ?, ?, ?, ?)';
-    
-    db.query(woQuery, [customer_id, vehicle_id, subtotal_cents, tax_cents, total_cents, tax_rate || 0.0825, notes], (err, result) => {
-        if (err) {
-            console.error(err);
-            res.status(500).json({ error: 'Database error creating work order' });
+    // Start a transaction to update vehicle mileage and create work order
+    db.beginTransaction((transErr) => {
+        if (transErr) {
+            console.error('Transaction error:', transErr);
+            res.status(500).json({ error: 'Database transaction error' });
             return;
         }
         
-        const work_order_id = result.insertId;
-        let promises = [];
-        
-        // Insert parts (but do NOT deduct inventory yet)
-        // Inventory will only be deducted when status changes from Estimate to Approved
-        if (parts && parts.length > 0) {
-            const partQuery = 'INSERT INTO work_order_parts (work_order_id, part_id, quantity, cost_cents) VALUES ?';
-            const partValues = parts.map(p => [work_order_id, p.part_id, p.quantity, p.cost_cents]);
-            promises.push(new Promise((resolve, reject) => {
-                db.query(partQuery, [partValues], (err) => {
-                    if (err) reject(err);
-                    else resolve();
-                });
-            }));
-            
-            console.log(`Work order #${work_order_id} created with ${parts.length} parts (inventory NOT deducted - will deduct when approved)`);
-        }
-        
-        // Insert labor
-        if (labor && labor.length > 0) {
-            const laborQuery = 'INSERT INTO work_order_labor (work_order_id, labor_id, quantity, cost_cents) VALUES ?';
-            const laborValues = labor.map(l => [work_order_id, l.labor_id, l.quantity, l.cost_cents]);
-            promises.push(new Promise((resolve, reject) => {
-                db.query(laborQuery, [laborValues], (err) => {
-                    if (err) reject(err);
-                    else resolve();
-                });
-            }));
-        }
-        
-        Promise.all(promises)
-            .then(() => {
-                res.json({ 
-                    message: 'Work order created successfully', 
-                    work_order_id: work_order_id,
-                    total_cents: total_cents
-                });
-            })
-            .catch(err => {
-                console.error(err);
-                res.status(500).json({ error: 'Error adding work order items' });
+        // First, update the vehicle's mileage if provided
+        if (current_mileage !== undefined && current_mileage !== null) {
+            const updateMileageQuery = 'UPDATE vehicles SET mileage = ? WHERE vehicle_id = ?';
+            db.query(updateMileageQuery, [current_mileage, vehicle_id], (mileageErr) => {
+                if (mileageErr) {
+                    console.error('Error updating vehicle mileage:', mileageErr);
+                    return db.rollback(() => {
+                        res.status(500).json({ error: 'Failed to update vehicle mileage' });
+                    });
+                }
+                
+                console.log(`Updated vehicle #${vehicle_id} mileage to ${current_mileage}`);
+                // Continue to create work order
+                createWorkOrder();
             });
+        } else {
+            // No mileage provided, just create work order
+            createWorkOrder();
+        }
+        
+        function createWorkOrder() {
+            // Insert work order
+            const woQuery = 'INSERT INTO work_orders (customer_id, vehicle_id, subtotal_cents, tax_cents, total_cents, tax_rate, notes) VALUES (?, ?, ?, ?, ?, ?, ?)';
+            
+            db.query(woQuery, [customer_id, vehicle_id, subtotal_cents, tax_cents, total_cents, tax_rate || 0.0825, notes], (err, result) => {
+                if (err) {
+                    console.error(err);
+                    return db.rollback(() => {
+                        res.status(500).json({ error: 'Database error creating work order' });
+                    });
+                }
+                
+                const work_order_id = result.insertId;
+                let promises = [];
+                
+                // Insert parts (but do NOT deduct inventory yet)
+                // Inventory will only be deducted when status changes from Estimate to Approved
+                if (parts && parts.length > 0) {
+                    const partQuery = 'INSERT INTO work_order_parts (work_order_id, part_id, quantity, cost_cents) VALUES ?';
+                    const partValues = parts.map(p => [work_order_id, p.part_id, p.quantity, p.cost_cents]);
+                    promises.push(new Promise((resolve, reject) => {
+                        db.query(partQuery, [partValues], (err) => {
+                            if (err) reject(err);
+                            else resolve();
+                        });
+                    }));
+                    
+                    console.log(`Work order #${work_order_id} created with ${parts.length} parts (inventory NOT deducted - will deduct when approved)`);
+                }
+                
+                // Insert labor
+                if (labor && labor.length > 0) {
+                    const laborQuery = 'INSERT INTO work_order_labor (work_order_id, labor_id, quantity, cost_cents) VALUES ?';
+                    const laborValues = labor.map(l => [work_order_id, l.labor_id, l.quantity, l.cost_cents]);
+                    promises.push(new Promise((resolve, reject) => {
+                        db.query(laborQuery, [laborValues], (err) => {
+                            if (err) reject(err);
+                            else resolve();
+                        });
+                    }));
+                }
+                
+                Promise.all(promises)
+                    .then(() => {
+                        // Commit the transaction
+                        db.commit((commitErr) => {
+                            if (commitErr) {
+                                console.error('Commit error:', commitErr);
+                                return db.rollback(() => {
+                                    res.status(500).json({ error: 'Failed to commit transaction' });
+                                });
+                            }
+                            
+                            res.json({ 
+                                message: 'Work order created successfully', 
+                                work_order_id: work_order_id,
+                                total_cents: total_cents,
+                                vehicle_mileage_updated: current_mileage !== undefined && current_mileage !== null
+                            });
+                        });
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        db.rollback(() => {
+                            res.status(500).json({ error: 'Error adding work order items' });
+                        });
+                    });
+            });
+        }
     });
 });
 
