@@ -13,9 +13,12 @@
     "start": "node index.js",
     "dev": "nodemon index.js",
     "migrate": "node migrate.js",
-    "seed": "node seed.js",
-    "seed-vehicles": "node seed_vehicles.js",
-    "seed-labor": "node seed_labor.js"
+    "migrate:fix": "node migrations/fix_work_orders_schema.js",
+    "migrate:restore-inventory": "node migrations/restore_estimate_inventory.js",
+    "seed:vehicles": "node seed_vehicles_2010_2015.js",
+    "seed:parts": "node seed_autozone_parts.js",
+    "seed:labor": "node seed_labor.js",
+    "seed:test": "node seed_test_data.js"
   },
   "dependencies": {
     "cors": "^2.8.5",

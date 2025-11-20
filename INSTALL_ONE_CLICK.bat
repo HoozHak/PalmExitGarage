@@ -146,6 +146,12 @@ echo Running migrations...
 cd server
 node migrate.js
 
+echo Applying schema fixes...
+node migrations\fix_work_orders_schema.js
+
+echo Restoring estimate inventory (safety)...
+node migrations\restore_estimate_inventory.js
+
 echo Seeding vehicle data...
 node seed_vehicles_2010_2015.js
 
@@ -169,16 +175,13 @@ echo    Step 4 of 5: Updating Configuration
 echo ================================================================
 echo.
 
-:: Update database config with the password
-echo const config = { > server\config\database.js
-echo     host: 'localhost', >> server\config\database.js
-echo     port: 3306, >> server\config\database.js
-echo     user: 'root', >> server\config\database.js
-echo     password: '%MYSQL_PASSWORD%', >> server\config\database.js
-echo     database: 'palmexitgarage' >> server\config\database.js
-echo }; >> server\config\database.js
-echo. >> server\config\database.js
-echo module.exports = config; >> server\config\database.js
+:: Write environment configuration (.env)
+echo DB_HOST=localhost > server\.env
+echo DB_PORT=3306 >> server\.env
+echo DB_USER=root >> server\.env
+echo DB_PASSWORD=%MYSQL_PASSWORD% >> server\.env
+echo DB_NAME=palmexitgarage >> server\.env
+echo PORT=5000 >> server\.env
 
 echo Configuration updated!
 

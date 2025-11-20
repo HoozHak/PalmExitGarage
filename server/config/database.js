@@ -1,14 +1,16 @@
 // Centralized database configuration
-// This file ensures all parts of the application use consistent database settings
-// Update these settings to match your MySQL database configuration
+// Uses environment variables with sensible defaults.
+// Create a .env file in the server directory to override.
+
+require('dotenv').config();
 
 module.exports = {
-    host: 'localhost',        // Database host (e.g., 'localhost' or remote host)
-    port: 3306,               // MySQL port (default: 3306)
-    user: 'root',             // Database username
-    password: 'Icanttellyou1',      // Database password
-    database: 'palmexitgarage', // Main database name
-    
+    host: process.env.DB_HOST || 'localhost',
+    port: Number(process.env.DB_PORT) || 3306,
+    user: process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD || '',
+    database: process.env.DB_NAME || 'palmexitgarage',
+
     // Connection options
-    connectTimeout: 60000     // Connection timeout in milliseconds
+    connectTimeout: Number(process.env.DB_CONNECT_TIMEOUT) || 60000
 };

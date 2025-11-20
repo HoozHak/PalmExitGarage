@@ -8,20 +8,8 @@ echo.
 :: Navigate to project root
 cd /d "%~dp0.."
 
-:: Check if MySQL service is running
-echo Checking MySQL service...
-sc query MySQL91 | find "RUNNING" >nul
-if %errorLevel% neq 0 (
-    echo MySQL service is not running. Starting MySQL...
-    net start MySQL91
-    if %errorLevel% neq 0 (
-        echo ERROR: Could not start MySQL service!
-        echo Please start MySQL manually or check Windows Services.
-        pause
-        exit /b 1
-    )
-)
-echo MySQL is running.
+:: Skipping MySQL service check to support any installed version.
+echo Skipping MySQL service check. Ensure your MySQL service is running (e.g., MySQL80/84/91) before starting.
 echo.
 
 :: Start backend server
