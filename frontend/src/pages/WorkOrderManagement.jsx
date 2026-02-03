@@ -220,12 +220,24 @@ function WorkOrderManagement() {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'Estimate': return '#FFD329';
-      case 'Approved': return '#4CAF50';
-      case 'Started': return '#FF9800';
-      case 'Complete': return '#2196F3';
-      case 'Cancelled': return '#f44336';
-      default: return '#ccc';
+      case 'Estimate': return '#FFD329';      // Bright Yellow
+      case 'Approved': return '#4CAF50';      // Green
+      case 'Started': return '#FF9800';       // Orange
+      case 'Complete': return '#2196F3';      // Blue
+      case 'Cancelled': return '#F44336';     // Red
+      default: return '#999999';              // Gray
+    }
+  };
+  
+  const getStatusTextColor = (status) => {
+    // Return appropriate text color for each status background
+    switch (status) {
+      case 'Estimate': return '#000000';      // Black text on yellow
+      case 'Approved': return '#FFFFFF';      // White text on green
+      case 'Started': return '#FFFFFF';       // White text on orange
+      case 'Complete': return '#FFFFFF';      // White text on blue
+      case 'Cancelled': return '#FFFFFF';     // White text on red
+      default: return '#FFFFFF';              // White text on gray
     }
   };
 
@@ -452,12 +464,15 @@ function WorkOrderManagement() {
                       <div>
                         <span style={{
                           backgroundColor: getStatusColor(workOrder.status),
-                          color: workOrder.status === 'Estimate' ? 'black' : 'white',
-                          padding: '4px 8px',
-                          borderRadius: '12px',
+                          color: getStatusTextColor(workOrder.status),
+                          padding: '6px 12px',
+                          borderRadius: '14px',
                           fontSize: '12px',
                           fontWeight: 'bold',
-                          textTransform: 'uppercase'
+                          textTransform: 'uppercase',
+                          display: 'inline-block',
+                          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.3)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)'
                         }}>
                           {workOrder.status}
                         </span>
@@ -534,15 +549,64 @@ function WorkOrderManagement() {
             )}
           </div>
 
+          {/* Status Legend */}
           <div style={{
             marginTop: '20px',
+            padding: '20px',
+            backgroundColor: '#333',
+            borderRadius: '10px',
+            marginBottom: '15px'
+          }}>
+            <h4 style={{ 
+              margin: '0 0 15px 0', 
+              color: '#FFD329',
+              fontSize: '16px',
+              fontWeight: 'bold'
+            }}>
+              📊 Status Legend
+            </h4>
+            <div style={{
+              display: 'flex',
+              gap: '15px',
+              flexWrap: 'wrap',
+              alignItems: 'center'
+            }}>
+              {['Estimate', 'Approved', 'Started', 'Complete', 'Cancelled'].map(status => (
+                <div key={status} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{
+                    backgroundColor: getStatusColor(status),
+                    color: getStatusTextColor(status),
+                    padding: '6px 12px',
+                    borderRadius: '14px',
+                    fontSize: '12px',
+                    fontWeight: 'bold',
+                    textTransform: 'uppercase',
+                    display: 'inline-block',
+                    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.3)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)'
+                  }}>
+                    {status}
+                  </span>
+                  <span style={{ color: '#ccc', fontSize: '12px' }}>
+                    {status === 'Estimate' && '- Quote/Estimate created'}
+                    {status === 'Approved' && '- Customer approved, inventory deducted'}
+                    {status === 'Started' && '- Work in progress'}
+                    {status === 'Complete' && '- Ready for customer pickup'}
+                    {status === 'Cancelled' && '- Work order cancelled'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div style={{
             padding: '15px',
             backgroundColor: '#333',
             borderRadius: '5px',
             fontSize: '14px',
             color: '#ccc'
           }}>
-            <strong>Note:</strong> Use the status dropdown for quick status changes, or click "View" for detailed work order management including full status change history and detailed editing options.
+            <strong>💡 Tip:</strong> Use the status dropdown for quick status changes, or click "View" for detailed work order management including full status change history and detailed editing options.
           </div>
         </div>
       </div>

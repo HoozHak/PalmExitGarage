@@ -138,6 +138,18 @@ const createTables = () => {
         )
     `;
     
+    // Tax settings table
+    const taxSettingsTable = `
+        CREATE TABLE IF NOT EXISTS tax_settings (
+            id INT PRIMARY KEY DEFAULT 1,
+            tax_rate DECIMAL(6, 4) NOT NULL DEFAULT 0.0825,
+            state VARCHAR(50) NOT NULL DEFAULT 'CA',
+            description VARCHAR(255) NOT NULL DEFAULT 'California State Tax',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        )
+    `;
+    
     // Create tables in proper order (respecting foreign key dependencies)
     const tables = [
         { name: 'customers', sql: customersTable },
@@ -147,7 +159,8 @@ const createTables = () => {
         { name: 'labor', sql: laborTable },
         { name: 'work_orders', sql: workOrdersTable },
         { name: 'work_order_parts', sql: workOrderPartsTable },
-        { name: 'work_order_labor', sql: workOrderLaborTable }
+        { name: 'work_order_labor', sql: workOrderLaborTable },
+        { name: 'tax_settings', sql: taxSettingsTable }
     ];
     
     let currentTable = 0;
@@ -155,7 +168,21 @@ const createTables = () => {
     const createNextTable = () => {
         if (currentTable >= tables.length) {
             console.log('All PalmExitGarage tables created successfully!');
-            db.end();
+            
+            // Insert default tax settings if it doesn't exist
+            const insertDefaultTax = `
+                INSERT IGNORE INTO tax_settings (id, tax_rate, state, description) 
+                VALUES (1, 0.0825, 'CA', 'California State Tax')
+            `;
+            
+            db.query(insertDefaultTax, (err) => {
+                if (err) {
+                    console.error('Error inserting default tax settings:', err);
+                } else {
+                    console.log('Default tax settings initialized (CA 8.25%)');
+                }
+                db.end();
+            });
             return;
         }
         

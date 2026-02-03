@@ -1,0 +1,142 @@
+================================================================================
+     PalmExitGarage - QUICK START COMMANDS (Manual Installation)
+================================================================================
+
+Copy the PalmExitGarage folder from your flash drive to: C:\PalmExitGarage
+(Or use the location where you copied it)
+
+Then run these commands in order:
+
+================================================================================
+1. INSTALL DEPENDENCIES (5-10 minutes total)
+================================================================================
+
+cd C:\PalmExitGarage\server
+npm install
+
+cd C:\PalmExitGarage\frontend
+npm install
+
+================================================================================
+2. CONFIGURE DATABASE PASSWORD
+================================================================================
+
+Edit: C:\PalmExitGarage\server\config\database.js
+
+Change the password line to your MySQL root password:
+  password: 'your_actual_password_here',
+
+Save the file.
+
+================================================================================
+3. CREATE DATABASE
+================================================================================
+
+Using MySQL command line:
+
+cd "C:\Program Files\MySQL\MySQL Server 8.0\bin"
+.\mysql -u root -p
+
+Then type:
+  CREATE DATABASE IF NOT EXISTS palmexitgarage;
+  exit;
+
+OR using MySQL Workbench:
+  - Open MySQL Workbench
+  - Run: CREATE DATABASE IF NOT EXISTS palmexitgarage;
+
+================================================================================
+4. SETUP DATABASE (All in one go)
+================================================================================
+
+cd C:\PalmExitGarage\server
+
+node migrate.js
+node seed_vehicles_2010_2015.js
+node seed_autozone_parts.js
+node seed_labor.js
+node seed_test_data.js
+
+Wait for each command to complete before running the next.
+
+================================================================================
+5. CREATE START SCRIPT
+================================================================================
+
+Create file: C:\PalmExitGarage\START_PALMEXITGARAGE.bat
+
+Copy this into it:
+
+@echo off
+cd /d "%~dp0"
+start "Backend" cmd /k "cd server && npm start"
+timeout /t 3 /nobreak >nul
+start "Frontend" cmd /k "cd frontend && npm run dev"
+timeout /t 5 /nobreak >nul
+start http://localhost:5174
+
+Save and close.
+
+================================================================================
+6. START THE APPLICATION
+================================================================================
+
+Double-click: C:\PalmExitGarage\START_PALMEXITGARAGE.bat
+
+OR manually in two separate terminals:
+
+Terminal 1:
+  cd C:\PalmExitGarage\server
+  npm start
+
+Terminal 2:
+  cd C:\PalmExitGarage\frontend
+  npm run dev
+
+================================================================================
+7. ACCESS APPLICATION
+================================================================================
+
+Open browser: http://localhost:5174
+
+Done! ✅
+
+================================================================================
+TROUBLESHOOTING
+================================================================================
+
+If database connection fails:
+  - Check MySQL service is running: services.msc → MySQL80
+  - Verify password in server/config/database.js
+  - Test: mysql -u root -p palmexitgarage
+
+If port errors:
+  - Make sure nothing else is using ports 5174 or 5000
+  - Close other applications
+
+================================================================================
+COPY/PASTE FRIENDLY - ALL COMMANDS IN ORDER
+================================================================================
+
+# Step 1 & 2: Dependencies
+cd C:\PalmExitGarage\server
+npm install
+cd C:\PalmExitGarage\frontend
+npm install
+
+# Step 3: Edit database.js with your password manually
+
+# Step 4: Database setup
+cd "C:\Program Files\MySQL\MySQL Server 8.0\bin"
+.\mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS palmexitgarage;"
+
+cd C:\PalmExitGarage\server
+node migrate.js
+node seed_vehicles_2010_2015.js
+node seed_autozone_parts.js
+node seed_labor.js
+node seed_test_data.js
+
+# Step 5: Create and run START_PALMEXITGARAGE.bat
+
+================================================================================

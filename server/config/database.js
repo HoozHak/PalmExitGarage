@@ -1,18 +1,16 @@
 // Centralized database configuration
-// This file ensures all parts of the application use consistent database settings
+// Uses environment variables with sensible defaults.
+// Create a .env file in the server directory to override.
+
+require('dotenv').config();
 
 module.exports = {
-    host: 'localhost',
-    port: 3308,
-    user: 'root',
-    password: 'example',
-    database: 'palmexitgarage',
-    
+    host: process.env.DB_HOST || 'localhost',
+    port: Number(process.env.DB_PORT) || 3306,
+    user: process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD || '',
+    database: process.env.DB_NAME || 'palmexitgarage',
+
     // Connection options
-    connectTimeout: 60000,
-    
-    // Docker container settings (for reference)
-    containerName: 'palmexitgarage-db',
-    dockerPort: '3308:3306',
-    volumeName: 'car-repair-app_db_data'
+    connectTimeout: Number(process.env.DB_CONNECT_TIMEOUT) || 60000
 };

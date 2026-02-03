@@ -4,6 +4,7 @@ const cors = require('cors');
 const dbConfig = require('./config/database');
 const emailService = require('./services/emailService');
 const configStore = require('./utils/configStore');
+const backupService = require('./services/backupService');
 require('dotenv').config();
 
 const app = express();
@@ -160,8 +161,7 @@ app.post('/api/vehicles', (req, res) => {
 // Get all parts
 app.get('/api/parts', (req, res) => {
     const query = `
-        SELECT *,
-               CASE WHEN quantity_on_hand > 0 THEN true ELSE false END as in_stock
+        SELECT *
         FROM parts 
         ORDER BY category, brand, item
     `;
@@ -1071,131 +1071,6 @@ app.put('/api/settings/tax', (req, res) => {
     });
 });
 
-// ===== DATABASE MANAGEMENT =====
-// Get database table counts
-app.get('/api/database/counts', (req, res) => {
-    const queries = [
-        'SELECT COUNT(*) as count FROM customers',
-        'SELECT COUNT(*) as count FROM vehicles',
-        'SELECT COUNT(*) as count FROM parts',
-        'SELECT COUNT(*) as count FROM labor',
-        'SELECT COUNT(*) as count FROM work_orders',
-        'SELECT COUNT(*) as count FROM tax_settings'
-    ];
-    
-    const results = {};
-    let completed = 0;
-    
-    queries.forEach((query, index) => {
-        const tableName = ['customers', 'vehicles', 'parts', 'labor', 'workOrders', 'taxSettings'][index];
-        
-        db.query(query, (err, result) => {
-            if (err) {
-                console.error(`Error counting ${tableName}:`, err);
-                results[tableName] = 0;
-            } else {
-                results[tableName] = result[0].count;
-            }
-            
-            completed++;
-            if (completed === queries.length) {
-                res.json(results);
-            }
-        });
-    });
-});
-
-// Delete selected database tables
-app.post('/api/database/delete', (req, res) => {
-    const { tables, confirmationKey } = req.body;
-    
-    // Validate confirmation key
-    if (confirmationKey !== 'DELETE_CONFIRMED_TWICE') {
-        res.status(400).json({ error: 'Invalid confirmation key' });
-        return;
-    }
-    
-    // Validate tables array
-    if (!tables || !Array.isArray(tables) || tables.length === 0) {
-        res.status(400).json({ error: 'No tables specified for deletion' });
-        return;
-    }
-    
-    // Map frontend table names to actual database tables
-    const tableMap = {
-        customers: { table: 'customers', description: 'All customer data' },
-        vehicles: { table: 'vehicles', description: 'All vehicle data' },
-        parts: { table: 'parts', description: 'All parts inventory' },
-        labor: { table: 'labor', description: 'All labor pricing' },
-        workOrders: { table: 'work_orders', description: 'All work orders and history' },
-        taxSettings: { table: 'tax_settings', description: 'Tax configuration' }
-    };
-    
-    // Validate table names
-    const validTables = tables.filter(table => tableMap[table]);
-    if (validTables.length !== tables.length) {
-        res.status(400).json({ error: 'Invalid table names provided' });
-        return;
-    }
-    
-    // Order tables for safe deletion (considering foreign key constraints)
-    const orderedDeletion = [];
-    if (validTables.includes('workOrders')) orderedDeletion.push('work_orders');
-    if (validTables.includes('vehicles')) orderedDeletion.push('vehicles');
-    if (validTables.includes('customers')) orderedDeletion.push('customers');
-    if (validTables.includes('parts')) orderedDeletion.push('parts');
-    if (validTables.includes('labor')) orderedDeletion.push('labor');
-    if (validTables.includes('taxSettings')) orderedDeletion.push('tax_settings');
-    
-    const results = {};
-    let completed = 0;
-    let hasError = false;
-    
-    const deleteNextTable = (index) => {
-        if (index >= orderedDeletion.length) {
-            // All deletions completed
-            if (!hasError) {
-                res.json({ 
-                    message: 'Selected database tables cleared successfully',
-                    results: results
-                });
-            }
-            return;
-        }
-        
-        const tableName = orderedDeletion[index];
-        const friendlyName = Object.keys(tableMap).find(key => tableMap[key].table === tableName);
-        
-        db.query(`DELETE FROM ${tableName}`, (err, result) => {
-            if (err) {
-                console.error(`Error clearing ${tableName}:`, err);
-                results[friendlyName] = { success: false, error: err.message };
-                hasError = true;
-                
-                if (!res.headersSent) {
-                    res.status(500).json({ 
-                        error: `Failed to clear ${tableName}`, 
-                        message: err.message,
-                        results: results
-                    });
-                }
-                return;
-            }
-            
-            results[friendlyName] = { 
-                success: true, 
-                rowsDeleted: result.affectedRows,
-                description: tableMap[friendlyName].description
-            };
-            
-            // Move to next table
-            deleteNextTable(index + 1);
-        });
-    };
-    
-    // Start deletion process
-    deleteNextTable(0);
-});
 
 // ===== WORK ORDERS =====
 // Get all work orders
@@ -1221,7 +1096,7 @@ app.get('/api/work-orders', (req, res) => {
 
 // Create new work order/estimate
 app.post('/api/work-orders', (req, res) => {
-    const { customer_id, vehicle_id, parts, labor, tax_rate, notes } = req.body;
+    const { customer_id, vehicle_id, parts, labor, tax_rate, notes, current_mileage } = req.body;
     
     // Calculate totals
     let subtotal_cents = 0;
@@ -1239,76 +1114,103 @@ app.post('/api/work-orders', (req, res) => {
     const tax_cents = Math.round(subtotal_cents * (tax_rate || 0.0825));
     const total_cents = subtotal_cents + tax_cents;
     
-    // Insert work order
-    const woQuery = 'INSERT INTO work_orders (customer_id, vehicle_id, subtotal_cents, tax_cents, total_cents, tax_rate, notes) VALUES (?, ?, ?, ?, ?, ?, ?)';
-    
-    db.query(woQuery, [customer_id, vehicle_id, subtotal_cents, tax_cents, total_cents, tax_rate || 0.0825, notes], (err, result) => {
-        if (err) {
-            console.error(err);
-            res.status(500).json({ error: 'Database error creating work order' });
+    // Start a transaction to update vehicle mileage and create work order
+    db.beginTransaction((transErr) => {
+        if (transErr) {
+            console.error('Transaction error:', transErr);
+            res.status(500).json({ error: 'Database transaction error' });
             return;
         }
         
-        const work_order_id = result.insertId;
-        let promises = [];
+        // First, update the vehicle's mileage if provided
+        if (current_mileage !== undefined && current_mileage !== null) {
+            const updateMileageQuery = 'UPDATE vehicles SET mileage = ? WHERE vehicle_id = ?';
+            db.query(updateMileageQuery, [current_mileage, vehicle_id], (mileageErr) => {
+                if (mileageErr) {
+                    console.error('Error updating vehicle mileage:', mileageErr);
+                    return db.rollback(() => {
+                        res.status(500).json({ error: 'Failed to update vehicle mileage' });
+                    });
+                }
+                
+                console.log(`Updated vehicle #${vehicle_id} mileage to ${current_mileage}`);
+                // Continue to create work order
+                createWorkOrder();
+            });
+        } else {
+            // No mileage provided, just create work order
+            createWorkOrder();
+        }
         
-        // Insert parts and deduct inventory if this is an approved work order
-        if (parts && parts.length > 0) {
-            const partQuery = 'INSERT INTO work_order_parts (work_order_id, part_id, quantity, cost_cents) VALUES ?';
-            const partValues = parts.map(p => [work_order_id, p.part_id, p.quantity, p.cost_cents]);
-            promises.push(new Promise((resolve, reject) => {
-                db.query(partQuery, [partValues], (err) => {
-                    if (err) reject(err);
-                    else resolve();
-                });
-            }));
+        function createWorkOrder() {
+            // Insert work order
+            const woQuery = 'INSERT INTO work_orders (customer_id, vehicle_id, subtotal_cents, tax_cents, total_cents, tax_rate, notes) VALUES (?, ?, ?, ?, ?, ?, ?)';
             
-            // If this work order is not just an estimate, deduct parts from inventory
-            // We'll check the is_estimate flag from the request body
-            const isEstimate = req.body.is_estimate || false;
-            if (!isEstimate) {
-                // Deduct inventory for each part
-                parts.forEach(part => {
-                    const inventoryQuery = 'UPDATE parts SET quantity_on_hand = GREATEST(0, quantity_on_hand - ?) WHERE part_id = ?';
+            db.query(woQuery, [customer_id, vehicle_id, subtotal_cents, tax_cents, total_cents, tax_rate || 0.0825, notes], (err, result) => {
+                if (err) {
+                    console.error(err);
+                    return db.rollback(() => {
+                        res.status(500).json({ error: 'Database error creating work order' });
+                    });
+                }
+                
+                const work_order_id = result.insertId;
+                let promises = [];
+                
+                // Insert parts (but do NOT deduct inventory yet)
+                // Inventory will only be deducted when status changes from Estimate to Approved
+                if (parts && parts.length > 0) {
+                    const partQuery = 'INSERT INTO work_order_parts (work_order_id, part_id, quantity, cost_cents) VALUES ?';
+                    const partValues = parts.map(p => [work_order_id, p.part_id, p.quantity, p.cost_cents]);
                     promises.push(new Promise((resolve, reject) => {
-                        db.query(inventoryQuery, [part.quantity, part.part_id], (err, result) => {
-                            if (err) {
-                                console.error(`Error deducting inventory for part ${part.part_id}:`, err);
-                                reject(err);
-                            } else {
-                                console.log(`Deducted ${part.quantity} units of part ${part.part_id} from inventory`);
-                                resolve();
-                            }
+                        db.query(partQuery, [partValues], (err) => {
+                            if (err) reject(err);
+                            else resolve();
                         });
                     }));
-                });
-            }
-        }
-        
-        // Insert labor
-        if (labor && labor.length > 0) {
-            const laborQuery = 'INSERT INTO work_order_labor (work_order_id, labor_id, quantity, cost_cents) VALUES ?';
-            const laborValues = labor.map(l => [work_order_id, l.labor_id, l.quantity, l.cost_cents]);
-            promises.push(new Promise((resolve, reject) => {
-                db.query(laborQuery, [laborValues], (err) => {
-                    if (err) reject(err);
-                    else resolve();
-                });
-            }));
-        }
-        
-        Promise.all(promises)
-            .then(() => {
-                res.json({ 
-                    message: 'Work order created successfully', 
-                    work_order_id: work_order_id,
-                    total_cents: total_cents
-                });
-            })
-            .catch(err => {
-                console.error(err);
-                res.status(500).json({ error: 'Error adding work order items' });
+                    
+                    console.log(`Work order #${work_order_id} created with ${parts.length} parts (inventory NOT deducted - will deduct when approved)`);
+                }
+                
+                // Insert labor
+                if (labor && labor.length > 0) {
+                    const laborQuery = 'INSERT INTO work_order_labor (work_order_id, labor_id, quantity, cost_cents) VALUES ?';
+                    const laborValues = labor.map(l => [work_order_id, l.labor_id, l.quantity, l.cost_cents]);
+                    promises.push(new Promise((resolve, reject) => {
+                        db.query(laborQuery, [laborValues], (err) => {
+                            if (err) reject(err);
+                            else resolve();
+                        });
+                    }));
+                }
+                
+                Promise.all(promises)
+                    .then(() => {
+                        // Commit the transaction
+                        db.commit((commitErr) => {
+                            if (commitErr) {
+                                console.error('Commit error:', commitErr);
+                                return db.rollback(() => {
+                                    res.status(500).json({ error: 'Failed to commit transaction' });
+                                });
+                            }
+                            
+                            res.json({ 
+                                message: 'Work order created successfully', 
+                                work_order_id: work_order_id,
+                                total_cents: total_cents,
+                                vehicle_mileage_updated: current_mileage !== undefined && current_mileage !== null
+                            });
+                        });
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        db.rollback(() => {
+                            res.status(500).json({ error: 'Error adding work order items' });
+                        });
+                    });
             });
+        }
     });
 });
 
@@ -2182,6 +2084,95 @@ app.post('/api/database/delete', (req, res) => {
                 });
             });
         }
+    });
+});
+
+// ===== BACKUP/RESTORE =====
+// Get list of all databases
+app.get('/api/backup/databases', async (req, res) => {
+    try {
+        const databases = await backupService.listDatabases();
+        res.json({ databases });
+    } catch (error) {
+        console.error('List databases error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Create backup of selected database
+app.post('/api/backup/create', async (req, res) => {
+    try {
+        const { database } = req.body;
+        
+        if (!database) {
+            return res.status(400).json({ error: 'Database name is required' });
+        }
+        
+        const result = await backupService.createBackup(database);
+        res.json({
+            message: `Backup created successfully for database '${database}'`,
+            ...result,
+            backupDirectory: backupService.getBackupDirectory()
+        });
+    } catch (error) {
+        console.error('Create backup error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// List all available backups
+app.get('/api/backup/list', (req, res) => {
+    try {
+        const backups = backupService.listBackups();
+        res.json({
+            backups,
+            backupDirectory: backupService.getBackupDirectory()
+        });
+    } catch (error) {
+        console.error('List backups error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Restore database from backup - DANGEROUS OPERATION
+app.post('/api/backup/restore', async (req, res) => {
+    try {
+        const { filename, confirmationKey } = req.body;
+        
+        // Security check - require confirmation
+        if (confirmationKey !== 'RESTORE_DANGER_CONFIRMED') {
+            return res.status(400).json({ error: 'Invalid confirmation key. Restore operation cancelled.' });
+        }
+        
+        if (!filename) {
+            return res.status(400).json({ error: 'Backup filename is required' });
+        }
+        
+        const result = await backupService.restoreBackup(filename);
+        res.json(result);
+    } catch (error) {
+        console.error('Restore backup error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Delete a backup file
+app.delete('/api/backup/:filename', async (req, res) => {
+    try {
+        const { filename } = req.params;
+        const result = await backupService.deleteBackup(filename);
+        res.json(result);
+    } catch (error) {
+        console.error('Delete backup error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get backup directory path
+app.get('/api/backup/directory', (req, res) => {
+    res.json({ 
+        backupDirectory: backupService.getBackupDirectory(),
+        message: 'Backup files are stored in this directory. You can manually copy them to external storage for safekeeping.'
     });
 });
 
